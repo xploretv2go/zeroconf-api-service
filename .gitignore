@@ -1,0 +1,8 @@
+/venv/
+.idea
+.github
+/__pycache__
+/service_discovery/__pycache__
+.vscode
+services.db
+.env.swp

@@ -1,0 +1,10 @@
+version: '3.4'
+
+services: 
+    service-discovery:
+        build: .
+        volumes: 
+            - .:/usr/src/app
+        ports: 
+            - 5000:80
+
