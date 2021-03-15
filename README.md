@@ -1,10 +1,6 @@
 # zeroconf.api.service
 You need to list and resolve or announce existing Zeroconf services, but you cannot implement your own mDNS/DNS-SD feature? Then this REST API is the right solution, because you can browse and register Zeroconf services via it.
 
-
-# zeroconf.api.service
-You need to list and resolve or announce existing Zeroconf services, but you cannot implement your own mDNS/DNS-SD feature? Then this REST API is the right solution, because you can browse and register Zeroconf services via it.
-
 # Zeroconf Service Discovery API
 
 This service browses the published zeroconf services in the local network of the server where the service is running and returns the results of the browse through the specified API GET endpoint. A service can be also registered by the API user through the POST method in /services endpoint.
