@@ -55,7 +55,7 @@ Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env
 
 **Definition**
 
-`GET /services`
+`GET /zeroconf`
 
 **Response**
 
@@ -97,7 +97,7 @@ Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env
 ```
 ### Register a service
 
-`POST /services`
+`POST /zeroconf`
 ```json
 {
      "name": "New test service._http._tcp.local.",
@@ -111,4 +111,15 @@ Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env
 **Response**
 
 - `201 created` on successful register 
+
+### Unregister service
+`DELETE /zeroconf/<id>`
+
+**Response**
+
+- `204 Unregistered` 
+- `404 Service not found` 
+
+
+
 
