@@ -64,6 +64,7 @@ Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env
 ```json
 [
   {
+            "id": 1,
             "name": "Fran's MacBook Pro._rfb._tcp.local.",
             "hostName": "frans-mbp.fritz.box",
             "domainName": "Frans-MacBook-Pro.local.",
@@ -77,7 +78,8 @@ Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env
                 "txtRecord": {}
             }
         },
-        {
+        {   
+            "id": 1,
             "name": "Fran's MacBook Pro._flametouch._tcp.local.",
             "hostName": "frans-mbp.fritz.box",
             "domainName": "Frans-MacBook-Pro.local.",
