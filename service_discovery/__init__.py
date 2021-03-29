@@ -140,6 +140,10 @@ class ServicesRoute(Resource):
         zeroconf = zeroconfGlobal.getZeroconf
         services_discovered = []
 
+        # Addition by Martin Stusek
+        services = list(ZeroconfServiceTypes.find(zc= zeroconf, ip_version=IPVersion.V4Only))
+        services = [x if "local." in x else x + "local." for x in services]
+
         services = list(ZeroconfServiceTypes.find(zc= zeroconf))
 
         collector = Collector()
