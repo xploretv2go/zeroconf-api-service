@@ -1,6 +1,4 @@
-from ipaddress import ip_address
 from flask import Flask, g
-from flask.globals import session
 from flask_restful import Resource, Api, reqparse
 import socket
 import shelve
@@ -8,12 +6,12 @@ import markdown
 import os
 from flask_cors import CORS
 import logging
-from time import sleep
 from dotenv import load_dotenv
 import re
+import uuid
+from time import sleep
 
-
-from zeroconf import IPVersion, ServiceBrowser, ServiceInfo, ServiceStateChange, Zeroconf, ZeroconfServiceTypes
+from zeroconf import IPVersion, ServiceBrowser, ServiceInfo, Zeroconf, ServiceStateChange, ZeroconfServiceTypes
 
 load_dotenv()
 
@@ -40,7 +38,10 @@ def teardown_db(exception):
     if db is not None:
         db.close()
 
-
+def clear_db(shelf):
+    for key in shelf.keys():
+        del shelf[key]
+       
 class ZeroConf:
     def __init__(self):
         self.zeroconf = Zeroconf(ip_version=IPVersion.V4Only)
@@ -49,8 +50,11 @@ class ZeroConf:
     def getZeroconf(self):
         return self.zeroconf
 
+
+# initialize all browser related objects as global objects.
+# this way they can all be initized during the startup
 # instantiate global zeroconf object
-zeroconfGlobal = ZeroConf()        
+zeroconfGlobal = ZeroConf()    
 
 # Declare Collector object which runs the service discovery browser
 class Collector:
@@ -64,44 +68,46 @@ class Collector:
             info = zeroconf.get_service_info(service_type, name)
             self.infos.append(info) 
 
+  
 
 def parseIPv4Addresses(addresses):
     ipv4_list = []
     for i in range(len(addresses)):
-        if (re.match('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$',addresses[i])):
+        if (re.match('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', addresses[i])):
             ipv4_list.append(addresses[i])
-        
+
     return ipv4_list
 
 def parseIPv6Addresses(addresses):
     ipv6_list = []
     for i in range(len(addresses)):
-        if (re.match('([a-f0-9:]+:+)+[a-f0-9]+',addresses[i])):
+        if (re.match('([a-f0-9:]+:+)+[a-f0-9]+', addresses[i])):
             ipv6_list.append(addresses[i])
-        
-    return ipv6_list    
+    
+    return ipv6_list
 
 def serviceToOutput(info, index):
     encoding = 'utf-8'
-    ipv4_address = info.parsed_addresses()[0] if info.parsed_addresses()[0:] else ''
-
     ipv4_list = parseIPv4Addresses(info.parsed_addresses())
     ipv6_list = parseIPv6Addresses(info.parsed_addresses())
 
-    hostname = getHostnameByAddress(ipv4_address)[0] if getHostnameByAddress(ipv4_address)[0:] else '' 
+    # split by . last element is an empty space
+    domain = info.server.split('.')   
+    domain.reverse()
+
     service = {
         "id": index,
         "name": info.name,
-        "hostName": hostname,
-        "domainName": info.server,
+        "hostName": info.server,
+        "domainName": domain[1] + '.',
         "addresses": {
-            "ipv4" : ipv4_list,
+            "ipv4": ipv4_list,
             "ipv6": ipv6_list
         },
         "service": {
             "type": info.type, 
-                    "port": info.port,
-                    "txtRecord": {}
+            "port": info.port,
+            "txtRecord": {}
                 },
         }
 
@@ -114,38 +120,12 @@ def serviceToOutput(info, index):
 
     return service
 
-def getHostnameByAddress(addr):
-     try:
-        return socket.gethostbyaddr(addr)
-     except socket.herror:
-        return None, None, None
-
-#@app.before_first_request
-def selfRegister():
-    props = {
-            'get': '/v1/zeroconf',
-            'post' : '/v1/zeroconf'
-           }
-
-    service = ServiceInfo(
-        "_http._tcp.local.",
-        "ZeroConf API._http._tcp.local.",
-        addresses=[socket.inet_aton("127.0.0.1")],
-        port=int(os.getenv('PORT')),
-        properties=props,
-        server=str(socket.gethostname() + '.'),
-    )
-    
-    zeroconf = zeroconfGlobal.getZeroconf
-    zeroconf.register_service(service)                
-
 # Define the index route and display readme on the page
 @app.route("/")
 def index():
     with open(os.path.dirname(app.root_path) + '/README.md') as markdown_file:
 
         readme_content = markdown_file.read()
-
         return markdown.markdown(readme_content)
 
 
@@ -154,7 +134,8 @@ class ServicesRoute(Resource):
 
     def get(self):
         shelf = get_db()
-        # keys = list(shelf.keys())
+        services_discovered = []
+        shelf.clear()
 
         zeroconf = zeroconfGlobal.getZeroconf
         services_discovered = []
@@ -164,87 +145,78 @@ class ServicesRoute(Resource):
         collector = Collector()
         browser = ServiceBrowser(zeroconf, services, handlers=[collector.on_service_state_change])
         sleep(1)
-    
 
-        index = 1
         for info in collector.infos:
-            shelf[str(index)] = info
-            services_discovered.append(serviceToOutput(info, index))    
-            index += 1
-            
+            unique_id = str(uuid.uuid4())
+            shelf[unique_id] = info
+            services_discovered.append(serviceToOutput(info, unique_id))    
             
         return {'services': services_discovered}, 200
 
     def post(self):
         parser = reqparse.RequestParser()
+        shelf = get_db()
+        
+        keys = list(shelf.keys())
 
-        parser.add_argument('name', required=False, type=str)
+        parser.add_argument('name', required=True, type=str)
         parser.add_argument('replaceWildcards', required=False, type=bool)
         parser.add_argument('serviceProtocol', required=False, type=str)
-        parser.add_argument('type', required=False, type=str)
-        parser.add_argument('port', required=False, type=int)
-        parser.add_argument('subtype', required=False, type=str)
-        parser.add_argument('txtRecords', required=False, type=dict)
+        parser.add_argument('service', required=True, type=dict)
+
+        nested_service = reqparse.RequestParser()
+        nested_service.add_argument('type', required=True, type=str, location='json')
+        nested_service.add_argument('port', required=True, type=int, location='json')
+        nested_service.add_argument('subtype', required=False, type=str, location='json')
+        nested_service.add_argument('txtRecords', required=False, type=dict, location='json')
 
         # parse arguments into an object
         args = parser.parse_args()
 
-        shelf = get_db()
-        shelf[str(args.name)] = args
-
-        #handle input exceptions before parsing the input into zeroconf service
-
-        if str(args.serviceProtocol).lower() == 'ipv6':
-                service_protocol = IPVersion.V6Only
-        elif str(args.serviceProtocol).lower() == 'ipv4':
-                service_protocol = IPVersion.V4Only
-        else: 
-             service_protocol = IPVersion.V4Only
-
         wildcard_name = args.name
+        parsedType = args.service['type']
+        print(args)
+        for key in keys:
+            if (wildcard_name == shelf[key].name):
+                return {'code': 400, 'message': 'Service already registered', 'reason': 'service with the same name has already been registered', 'data': args.name}, 400
+
+        if ('subtype' in args.service):
+            parsedType = args.service['subtype'] + 'local.'
 
         if (args.replaceWildcards):
-            wildcard_name = str(args.name).split('.')[0] + ' at ' + socket.gethostname() + '.' + args.type
-
-        if (args.txtRecords == None): 
-                args.txtRecords = {}
+            wildcard_name = str(args.name).split('.')[0] + ' at ' + socket.gethostname() + '.' + parsedType
+    
+        if (args.service['txtRecords'] is not None): 
+            args.service['txtRecords'] = {}
 
         if (not args.name):        
-                return {'code': 400, 'message': 'Bad parameter in request', 'reason': 'wrong service name', 'data': args}, 400
+            return {'code': 400, 'message': 'Bad parameter in request', 'reason': 'wrong service name', 'data': args}, 400
 
-        if (not args.type):
-                return {'code': 400, 'message': 'Bad parameter in request','reason': 'type is missing', 'data': args}, 400
-        elif (not args.type.endswith('.') or len(str(args.name)) == 0):
-                return {'code': 400, 'message': 'Bad parameter in request','reason': 'wrong type format, subtype must end with "."', 'data': args}, 400
+        if (not args.service['type']):
+            return {'code': 400, 'message': 'Bad parameter in request', 'reason': 'type is missing', 'data': args}, 400
+        elif (not args.service['type'].endswith('.') or len(str(args.name)) == 0):
+            return {'code': 400, 'message': 'Bad parameter in request', 'reason': "wrong type format, subtype must end with '.'", 'data': args}, 400
         
-        if (not (type(args.port) == int)):
-                return {'code': 400, 'message': 'Bad parameter in request' ,'reason': 'port not set', 'data': args}, 400
-
-        if (not (args.type)):
-                return {'code': 400, 'message': 'Bad parameter in request' ,'reason': 'type not set', 'data': args}, 400
+        if (not (type(args.service['port']) == int)):
+            return {'code': 400, 'message': 'Bad parameter in request', 'reason': 'port not set', 'data': args}, 400
  
-        if (args.subtype):
-            if(not(args.subtype.endswith('.'))):
-                args.type + args.subtype
-            else: 
-                return {'code': 400, 'message': 'Bad parameter in request' ,'reason': 'wrong subtype format, subtype must end with "." character' , 'data': args}, 400
-    
-                
         if args:
             new_service = ServiceInfo(
-                    args.type,
+                    parsedType,
                     wildcard_name,
                     addresses=[socket.inet_aton("127.0.0.1")],
-                    port=args.port,
+                    port=args.service['port'],
                     server=str(socket.gethostname() + '.'),
-                    properties=args.txtRecords
+                    properties=args.service['txtRecords']
                 
             )
-            ip_version = service_protocol
-            zeroconf = Zeroconf(ip_version=ip_version)
+            zeroconf = zeroconfGlobal.getZeroconf
+            unique_id = str(uuid.uuid4())
+            shelf[unique_id] = new_service
             zeroconf.register_service(new_service)
             
         return {'code': 201, 'message': 'Service registered', 'data': args}, 201
+
 
 class ServiceRoute(Resource):
     def get(self, identifier):
@@ -257,7 +229,7 @@ class ServiceRoute(Resource):
 
     def delete(self, identifier):
         shelf = get_db()
-        
+
         zeroconf = zeroconfGlobal.getZeroconf
 
         if not (identifier in shelf):
@@ -266,17 +238,9 @@ class ServiceRoute(Resource):
         zeroconf.unregister_service(shelf[identifier])
         del shelf[identifier]
         
-        return {'code': 204, 'message': 'Service unregistered', 'data': identifier}, 204
-
-class InitializeSelf(Resource):
-    def post(self):
-        selfRegister()
-
-        return {'code': 201, 'message': 'ZeroConf API published as a service'}, 201
+        return '', 204
 
 
 # Define routes
 api.add_resource(ServicesRoute, '/v1/zeroconf')
 api.add_resource(ServiceRoute, '/v1/zeroconf/<string:identifier>')
-
-api.add_resource(InitializeSelf,'/v1/zeroconf/init')
