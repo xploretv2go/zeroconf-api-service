@@ -8,7 +8,6 @@ from flask_cors import CORS
 import logging
 from dotenv import load_dotenv
 import re
-import uuid
 from time import sleep
 
 from zeroconf import IPVersion, ServiceBrowser, ServiceInfo, Zeroconf, ServiceStateChange, ZeroconfServiceTypes
@@ -22,7 +21,10 @@ app = Flask(__name__)
 api = Api(app)
 
 # Set CORS policy
-CORS(app, resources={r"/*": {"origins": "*"}})
+# CORS(app, resources={r"/*": {"origins": "*"}})
+app.config['CORS_HEADERS'] = 'Content-Type'
+CORS(app)
+
 
 # Initialize shelf DB
 def get_db():
@@ -54,9 +56,10 @@ class ZeroConf:
 # initialize all browser related objects as global objects.
 # this way they can all be initized during the startup
 # instantiate global zeroconf object
-zeroconfGlobal = ZeroConf()    
+zeroconfGlobal = ZeroConf()
 
-# Declare Collector object which runs the service discovery browser
+
+
 class Collector:
     def __init__(self):
         self.infos = []
@@ -66,9 +69,14 @@ class Collector:
     ) -> None:
         if state_change is ServiceStateChange.Added:
             info = zeroconf.get_service_info(service_type, name)
-            self.infos.append(info) 
+            if info not in self.infos:
+                self.infos.append(info) 
+        if state_change is ServiceStateChange.Removed:
+            info = zeroconf.get_service_info(service_type, name)
+            self.infos.remove(info)
+        # TODO update
+    
 
-  
 
 def parseIPv4Addresses(addresses):
     ipv4_list = []
@@ -129,32 +137,24 @@ def index():
         return markdown.markdown(readme_content)
 
 
+collector = Collector()
+services = list(ZeroconfServiceTypes.find(zc= zeroconfGlobal.getZeroconf, ip_version=IPVersion.V4Only))
+services = [x if "local." in x else x + "local." for x in services]
+browser = ServiceBrowser(zeroconfGlobal.getZeroconf,services, handlers=[collector.on_service_state_change])
 class ServicesRoute(Resource):
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG) 
 
     def get(self):
         shelf = get_db()
         services_discovered = []
         shelf.clear()
 
-        zeroconf = zeroconfGlobal.getZeroconf
-        services_discovered = []
-
-        # Addition by Martin Stusek
-        services = list(ZeroconfServiceTypes.find(zc= zeroconf, ip_version=IPVersion.V4Only))
-        services = [x if "local." in x else x + "local." for x in services]
-
-        services = list(ZeroconfServiceTypes.find(zc= zeroconf))
-
-        collector = Collector()
-        browser = ServiceBrowser(zeroconf, services, handlers=[collector.on_service_state_change])
-        sleep(1)
-
         for info in collector.infos:
-            unique_id = str(uuid.uuid4())
-            shelf[unique_id] = info
-            services_discovered.append(serviceToOutput(info, unique_id))    
-            
+            if(info is not None):
+                shelf[(info.name).lower()] = info
+                services_discovered.append(serviceToOutput(info, (info.name).lower()))    
+
+
         return {'services': services_discovered}, 200
 
     def post(self):
@@ -172,7 +172,7 @@ class ServicesRoute(Resource):
         nested_service.add_argument('type', required=True, type=str, location='json')
         nested_service.add_argument('port', required=True, type=int, location='json')
         nested_service.add_argument('subtype', required=False, type=str, location='json')
-        nested_service.add_argument('txtRecords', required=False, type=dict, location='json')
+        nested_service.add_argument('txtRecord', required=False, type=dict, location='json')
 
         # parse arguments into an object
         args = parser.parse_args()
@@ -182,16 +182,13 @@ class ServicesRoute(Resource):
         print(args)
         for key in keys:
             if (wildcard_name == shelf[key].name):
-                return {'code': 400, 'message': 'Service already registered', 'reason': 'service with the same name has already been registered', 'data': args.name}, 400
-
-        if ('subtype' in args.service):
-            parsedType = args.service['subtype'] + 'local.'
+                return {'code': 409, 'message': 'Service already registered', 'reason': 'service with the same name has already been registered', 'data': args.name}, 409
 
         if (args.replaceWildcards):
             wildcard_name = str(args.name).split('.')[0] + ' at ' + socket.gethostname() + '.' + parsedType
     
-        if (args.service['txtRecords'] is not None): 
-            args.service['txtRecords'] = {}
+        if (args.service['txtRecord'] is None): 
+            args.service['txtRecord'] = {}
 
         if (not args.name):        
             return {'code': 400, 'message': 'Bad parameter in request', 'reason': 'wrong service name', 'data': args}, 400
@@ -211,12 +208,12 @@ class ServicesRoute(Resource):
                     addresses=[socket.inet_aton("127.0.0.1")],
                     port=args.service['port'],
                     server=str(socket.gethostname() + '.'),
-                    properties=args.service['txtRecords']
+                    properties=args.service['txtRecord']
                 
             )
             zeroconf = zeroconfGlobal.getZeroconf
-            unique_id = str(uuid.uuid4())
-            shelf[unique_id] = new_service
+            shelf[(wildcard_name).lower()] = new_service
+
             zeroconf.register_service(new_service)
             
         return {'code': 201, 'message': 'Service registered', 'data': args}, 201
@@ -225,6 +222,7 @@ class ServicesRoute(Resource):
 class ServiceRoute(Resource):
     def get(self, identifier):
         shelf = get_db()
+        identifier = identifier.lower()
 
         if not (identifier in shelf):
             return {'message': 'Service not found', 'service': {}}, 404
@@ -234,6 +232,7 @@ class ServiceRoute(Resource):
     def delete(self, identifier):
         shelf = get_db()
 
+        identifier = identifier.lower()
         zeroconf = zeroconfGlobal.getZeroconf
 
         if not (identifier in shelf):
