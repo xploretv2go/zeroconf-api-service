@@ -118,7 +118,7 @@ def serviceToOutput(info):
     domain.reverse()
 
     service = {
-        "name": info.name,
+        "name": info.name.split(".")[0],
         "hostName": info.server,
         "domainName": domain[1] + ".",
         "addresses": {"ipv4": ipv4_list, "ipv6": ipv6_list},
@@ -150,6 +150,7 @@ services = list(
         zc=zeroconfGlobal.getZeroconf, ip_version=IPVersion.V4Only
     )
 )
+
 services = [x if "local." in x else x + "local." for x in services]
 browser = ServiceBrowser(
     zeroconfGlobal.getZeroconf, services, handlers=[collector.on_service_state_change]
@@ -195,16 +196,19 @@ class ServicesRoute(Resource):
         # parse arguments into an object
         args = parser.parse_args()
 
-        wildcard_name = args.name
+        wildcard_name = (
+            args.name + args.service["type"]
+            if args.service["type"].startswith(".")
+            else args.name + "." + args.service["type"]
+        )
         parsedType = args.service["type"]
-        print(args)
         for key in keys:
             if wildcard_name == shelf[key].name:
                 return {
                     "code": 409,
                     "message": "Service already registered",
                     "reason": "service with the same name has already been registered",
-                    "data": args.name,
+                    "status": args.name,
                 }, 409
 
         if args.replaceWildcards:
@@ -228,7 +232,7 @@ class ServicesRoute(Resource):
                 "code": 400,
                 "message": "Bad parameter in request",
                 "reason": "Wrong input in the request's body",
-                "data": args,
+                "status": args,
             }, 400
 
         elif not args.service["type"].endswith(".") or len(str(args.name)) == 0:
@@ -236,7 +240,7 @@ class ServicesRoute(Resource):
                 "code": 400,
                 "message": "Bad parameter in request",
                 "reason": "wrong type format, subtype must end with '.'",
-                "data": args,
+                "status": args,
             }, 400
 
         if args:
@@ -253,7 +257,7 @@ class ServicesRoute(Resource):
 
             zeroconf.register_service(new_service)
 
-        return {"code": 201, "message": "Service registered", "data": args}, 201
+        return {"code": 201, "message": "Service registered", "status": args}, 201
 
 
 class ServiceRoute(Resource):
@@ -266,7 +270,7 @@ class ServiceRoute(Resource):
 
         return {
             "message": "Service found",
-            "data": serviceToOutput(shelf[identifier], identifier),
+            "status": serviceToOutput(shelf[identifier], identifier),
         }, 200
 
     def delete(self, identifier):
@@ -276,7 +280,11 @@ class ServiceRoute(Resource):
         zeroconf = zeroconfGlobal.getZeroconf
 
         if not (identifier in shelf):
-            return {"code": 404, "message": "Device not found", "data": identifier}, 404
+            return {
+                "code": 404,
+                "message": "Device not found",
+                "status": identifier,
+            }, 404
 
         zeroconf.unregister_service(shelf[identifier])
         del shelf[identifier]
