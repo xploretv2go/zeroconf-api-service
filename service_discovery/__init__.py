@@ -84,10 +84,10 @@ class Collector:
             info = zeroconf.get_service_info(service_type, name)
             if info not in self.infos:
                 self.infos.append(info)
-        # if state_change is ServiceStateChange.Removed:
-        #     info = zeroconf.get_service_info(service_type, name)
-        #     if info in self.infos:
-        #         self.infos.remove(info)
+        if state_change is ServiceStateChange.Removed:
+            info = zeroconf.get_service_info(service_type, name)
+            if info in self.infos:
+                self.infos.remove(info)
 
 
 def parseIPv4Addresses(addresses):
