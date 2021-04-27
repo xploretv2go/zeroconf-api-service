@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 import re
 from flask import jsonify
 
-
 from zeroconf import (
     IPVersion,
     ServiceBrowser,
@@ -85,9 +84,10 @@ class Collector:
             info = zeroconf.get_service_info(service_type, name)
             if info not in self.infos:
                 self.infos.append(info)
-        if state_change is ServiceStateChange.Removed:
-            info = zeroconf.get_service_info(service_type, name)
-            self.infos.remove(info)
+        # if state_change is ServiceStateChange.Removed:
+        #     info = zeroconf.get_service_info(service_type, name)
+        #     if info in self.infos:
+        #         self.infos.remove(info)
 
 
 def parseIPv4Addresses(addresses):
@@ -163,7 +163,7 @@ class ServicesRoute(Resource):
     def get(self):
         shelf = get_db()
         services_discovered = []
-        shelf.clear()
+        clear_db(shelf)
 
         for info in collector.infos:
             if info is not None:
@@ -253,9 +253,8 @@ class ServicesRoute(Resource):
                 properties=args.service["txtRecord"],
             )
             zeroconf = zeroconfGlobal.getZeroconf
-            shelf[(wildcard_name).lower()] = new_service
-
             zeroconf.register_service(new_service)
+            shelf[(wildcard_name).lower()] = new_service
 
         return {"code": 201, "message": "Service registered", "status": args}, 201
 
@@ -263,31 +262,57 @@ class ServicesRoute(Resource):
 class ServiceRoute(Resource):
     def get(self, identifier):
         shelf = get_db()
-        identifier = identifier.lower()
-
-        if not (identifier in shelf):
-            return {"message": "Service not found", "service": {}}, 404
-
-        return {
-            "message": "Service found",
-            "status": serviceToOutput(shelf[identifier], identifier),
-        }, 200
-
-    def delete(self, identifier):
-        shelf = get_db()
+        keys = list(shelf.keys())
 
         identifier = identifier.lower()
-        zeroconf = zeroconfGlobal.getZeroconf
 
-        if not (identifier in shelf):
+        matching = [s for s in keys if identifier in s]
+
+        if not matching:
             return {
                 "code": 404,
                 "message": "Device not found",
                 "status": identifier,
             }, 404
 
-        zeroconf.unregister_service(shelf[identifier])
-        del shelf[identifier]
+        if not (matching[0] in shelf):
+            return {"message": "Service not found", "service": {}}, 404
+
+        return {
+            "message": "Service found",
+            "status": serviceToOutput(shelf[matching[0]]),
+        }, 200
+
+    def delete(self, identifier):
+        shelf = get_db()
+        keys = list(shelf.keys())
+
+        identifier = identifier.lower()
+        zeroconf = zeroconfGlobal.getZeroconf
+
+        matching = [s for s in keys if identifier in s]
+
+        if not matching:
+            return {
+                "code": 404,
+                "message": "Device not found",
+                "status": identifier,
+            }, 404
+
+        if not (matching[0] in shelf):
+            return {
+                "code": 404,
+                "message": "Device not found",
+                "status": identifier,
+            }, 404
+
+        service = shelf[matching[0]]
+
+        print(service.name)
+
+        zeroconf.unregister_service(service)
+        collector.infos.remove(service)
+        del shelf[matching[0]]
 
         return "", 204
 
