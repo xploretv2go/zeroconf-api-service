@@ -5,4 +5,5 @@
 /service_discovery/__pycache__
 .vscode
 services.db
+services
 .env.swp
