@@ -152,7 +152,16 @@ services = list(
 )
 
 # Add additional subtypes to the ones found
-services.extend(["_mqtt2go._http._tcp.local.", "_smb._tcp.local."])
+services.extend(
+    [
+        "_mqtt2go._http._tcp.local.",
+        "_smb._tcp.local.",
+        "_flametouch._tcp.local.",
+        "_mqtt._tcp.local.",
+        "_ssh._tcp.local.",
+        "_http._tcp.local.",
+    ]
+)
 
 services = [x if "local." in x else x + "local." for x in services]
 browser = ServiceBrowser(
@@ -181,7 +190,7 @@ class ServicesRoute(Resource):
 
         keys = list(shelf.keys())
 
-        parser.add_argument("name", required=False, type=str)
+        parser.add_argument("name", required=True, type=str)
         parser.add_argument("replaceWildcards", required=False, type=bool)
         parser.add_argument("serviceProtocol", required=False, type=str)
         parser.add_argument("service", required=True, type=dict)
@@ -198,6 +207,28 @@ class ServicesRoute(Resource):
 
         # parse arguments into an object
         args = parser.parse_args()
+
+        if not args.name or "type" not in args.service or "port" not in args.service:
+            return {
+                "code": 400,
+                "message": "Bad parameter in request",
+                "reason": "Wrong input in the request's body",
+                "status": args,
+            }, 400
+
+        elif not args.service["type"].endswith(".") or len(str(args.name)) == 0:
+            return {
+                "code": 400,
+                "message": "Bad parameter in request",
+                "reason": "wrong type format, subtype must end with '.'",
+                "status": args,
+            }, 400
+
+        if "txtRecord" in args.service:
+            if args.service["txtRecord"] is None:
+                args.service["txtRecord"] = {}
+        elif "txtRecord" not in args.service:
+            args.service["txtRecord"] = {}
 
         wildcard_name = (
             args.name.split(".")[0] + args.service["type"]
@@ -231,30 +262,6 @@ class ServicesRoute(Resource):
                 + "."
                 + parsedType
             )
-
-        if "txtRecord" in args.service:
-            if args.service["txtRecord"] is None:
-                args.service["txtRecord"] = {}
-
-        if (
-            not args.name
-            or not args.service["type"]
-            or not (type(args.service["port"]) == int)
-        ):
-            return {
-                "code": 400,
-                "message": "Bad parameter in request",
-                "reason": "Wrong input in the request's body",
-                "status": args,
-            }, 400
-
-        elif not args.service["type"].endswith(".") or len(str(args.name)) == 0:
-            return {
-                "code": 400,
-                "message": "Bad parameter in request",
-                "reason": "wrong type format, subtype must end with '.'",
-                "status": args,
-            }, 400
 
         if args:
             new_service = ServiceInfo(
