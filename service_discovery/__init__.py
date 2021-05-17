@@ -208,16 +208,27 @@ class ServicesRoute(Resource):
 
         # parse arguments into an object
         args = parser.parse_args()
-
-        subtypeList = args.service["subtype"].split(".")
-        typeList = args.service["type"].split(".")
         parsedType = args.service["type"]
 
-        if subtypeList[len(subtypeList) - 1] != "local":
-            parsedType = args.service["subtype"] + ".local."
+        if "subtype" in args.service:
+            subtypeList = args.service["subtype"].split(".")
 
-        if typeList[len(typeList) - 1] != "local" and "subtype" not in args.service:
-            parsedType = args.service["type"] + ".local."
+            if subtypeList[len(subtypeList) - 1] != "local":
+                parsedType = args.service["subtype"] + ".local."
+
+        if "type" in args.service:
+            typeList = args.service["type"].split(".")
+
+            if typeList[len(typeList) - 1] != "local" and "subtype" not in args.service:
+                parsedType = args.service["type"] + ".local."
+
+        else:
+            return {
+                "code": 400,
+                "message": "Type missing",
+                "reason": "Wrong input in the request's body",
+                "status": args,
+            }, 400
 
         if not args.name or "type" not in args.service or "port" not in args.service:
             return {
@@ -226,14 +237,6 @@ class ServicesRoute(Resource):
                 "reason": "Wrong input in the request's body",
                 "status": args,
             }, 400
-
-        # elif not args.service["type"].endswith(".") or len(str(args.name)) == 0:
-        #     return {
-        #         "code": 400,
-        #         "message": "Bad parameter in request",
-        #         "reason": "wrong type format, subtype must end with '.'",
-        #         "status": args,
-        #     }, 400
 
         if "txtRecord" in args.service:
             if args.service["txtRecord"] is None:
