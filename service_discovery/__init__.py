@@ -156,6 +156,7 @@ services.extend(
     [
         "_mqtt2go._http._tcp.local.",
         "_smb._tcp.local.",
+        "_mqtt2go._sub._http._tcp.",
         "_flametouch._tcp.local.",
         "_mqtt._tcp.local.",
         "_ssh._tcp.local.",
@@ -208,6 +209,16 @@ class ServicesRoute(Resource):
         # parse arguments into an object
         args = parser.parse_args()
 
+        subtypeList = args.service["subtype"].split(".")
+        typeList = args.service["type"].split(".")
+        parsedType = args.service["type"]
+
+        if subtypeList[len(subtypeList) - 1] != "local":
+            parsedType = args.service["subtype"] + ".local."
+
+        if typeList[len(typeList) - 1] != "local" and "subtype" not in args.service:
+            parsedType = args.service["type"] + ".local."
+
         if not args.name or "type" not in args.service or "port" not in args.service:
             return {
                 "code": 400,
@@ -216,13 +227,13 @@ class ServicesRoute(Resource):
                 "status": args,
             }, 400
 
-        elif not args.service["type"].endswith(".") or len(str(args.name)) == 0:
-            return {
-                "code": 400,
-                "message": "Bad parameter in request",
-                "reason": "wrong type format, subtype must end with '.'",
-                "status": args,
-            }, 400
+        # elif not args.service["type"].endswith(".") or len(str(args.name)) == 0:
+        #     return {
+        #         "code": 400,
+        #         "message": "Bad parameter in request",
+        #         "reason": "wrong type format, subtype must end with '.'",
+        #         "status": args,
+        #     }, 400
 
         if "txtRecord" in args.service:
             if args.service["txtRecord"] is None:
@@ -231,18 +242,16 @@ class ServicesRoute(Resource):
             args.service["txtRecord"] = {}
 
         wildcard_name = (
-            args.name.split(".")[0] + args.service["type"]
-            if args.service["type"].startswith(".")
-            else args.name.split(".")[0] + "." + args.service["type"]
+            args.name.split(".")[0] + parsedType
+            if parsedType.startswith(".")
+            else args.name.split(".")[0] + "." + parsedType
         )
-        parsedType = args.service["type"]
 
         if "subtype" in args.service:
-            parsedType = args.service["subtype"]
             wildcard_name = (
-                args.name.split(".")[0] + args.service["type"]
-                if args.service["subtype"].startswith(".")
-                else args.name.split(".")[0] + "." + args.service["subtype"]
+                args.name.split(".")[0] + parsedType
+                if parsedType.startswith(".")
+                else args.name.split(".")[0] + "." + parsedType
             )
 
         for key in keys:
