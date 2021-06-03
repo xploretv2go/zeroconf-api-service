@@ -120,7 +120,7 @@ def serviceToOutput(info):
     service = {
         "name": info.name.split(".")[0],
         "hostName": info.server,
-        "domainName": domain[1] + ".",
+        "domainName": ".local.",
         "addresses": {"ipv4": ipv4_list, "ipv6": ipv6_list},
         "service": {"type": info.type, "port": info.port, "txtRecord": {}},
     }
@@ -133,6 +133,23 @@ def serviceToOutput(info):
     service["service"]["txtRecord"].update(properties)
 
     return service
+
+
+@app.before_first_request
+def selfRegister():
+    props = {"get": "/v1/zeroconf", "post": "/v1/zeroconf"}
+
+    service = ServiceInfo(
+        "_http._tcp.local.",
+        "ZeroConf Service Discovery API._http._tcp.local.",
+        addresses=[socket.inet_aton("127.0.0.1")],
+        port=int(os.getenv("PORT")),
+        properties=props,
+        server=str(socket.gethostname() + "."),
+    )
+
+    zeroconf = zeroconfGlobal.getZeroconf
+    zeroconf.register_service(service)
 
 
 # Define the index route and display readme on the page
@@ -346,6 +363,38 @@ class ServiceRoute(Resource):
 
         return "", 204
 
+    # delete method through post request in case of beacon usage
+    def post(self, identifier):
+        shelf = get_db()
+        keys = list(shelf.keys())
+
+        identifier = identifier.lower()
+        zeroconf = zeroconfGlobal.getZeroconf
+
+        matching = [s for s in keys if identifier in s]
+
+        if not matching:
+            return {
+                "code": 404,
+                "message": "Device not found",
+                "status": identifier,
+            }, 404
+
+        if not (matching[0] in shelf):
+            return {
+                "code": 404,
+                "message": "Device not found",
+                "status": identifier,
+            }, 404
+
+        service = shelf[matching[0]]
+
+        zeroconf.unregister_service(service)
+        collector.infos.remove(service)
+        del shelf[matching[0]]
+
+        return "", 204
+
 
 #####################
 #   Error Routes
@@ -386,5 +435,5 @@ def internal_server_error(error):
 #  Routes
 #####################
 
-api.add_resource(ServicesRoute, "/v1/zeroconf")
-api.add_resource(ServiceRoute, "/v1/zeroconf/<string:identifier>")
+api.add_resource(ServicesRoute, "/a1/xploretv/v1/zeroconf")
+api.add_resource(ServiceRoute, "/a1/xploretv/v1/zeroconf/<string:identifier>")
