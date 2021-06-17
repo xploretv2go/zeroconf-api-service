@@ -2,7 +2,6 @@ from flask import Flask, g
 from flask_restful import Resource, Api, reqparse
 import socket
 import shelve
-import markdown
 import os
 from flask_cors import CORS
 import logging
@@ -140,7 +139,7 @@ def serviceToOutput(info):
 
 @app.before_first_request
 def selfRegister():
-    props = {"get": "/v1/zeroconf", "post": "/v1/zeroconf"}
+    props = {"get": "/a1/xploretv/v1/zeroconf"}
 
     service = ServiceInfo(
         "_http._tcp.local.",
@@ -158,10 +157,16 @@ def selfRegister():
 # Define the index route and display readme on the page
 @app.route("/")
 def index():
-    with open(os.path.dirname(app.root_path) + "/README.md") as markdown_file:
+    shelf = get_db()
+    services_discovered = []
+    clear_db(shelf)
 
-        readme_content = markdown_file.read()
-        return markdown.markdown(readme_content)
+    for info in collector.infos:
+        if info is not None:
+            shelf[(info.name).lower()] = info
+            services_discovered.append(serviceToOutput(info))
+
+    return {"services": services_discovered}, 200
 
 
 collector = Collector()
@@ -299,7 +304,7 @@ class ServicesRoute(Resource):
             new_service = ServiceInfo(
                 parsedType,
                 wildcard_name,
-                addresses=[socket.inet_aton("127.0.0.1")],
+                addresses=[socket.inet_aton(ip_address)],
                 port=args.service["port"],
                 server=str(socket.gethostname() + "."),
                 properties=args.service["txtRecord"],
