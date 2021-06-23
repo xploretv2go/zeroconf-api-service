@@ -143,7 +143,9 @@ def selfRegister():
 
     service = ServiceInfo(
         "_http._tcp.local.",
-        "ZeroConf Service Discovery API._http._tcp.local.",
+        "ZeroConf Service Discovery API at "
+        + socket.gethostname()
+        + "._http._tcp.local.",
         addresses=[socket.inet_aton(ip_address)],
         port=int(os.getenv("PORT")),
         properties=props,
