@@ -115,6 +115,9 @@ def serviceToOutput(info):
     ipv4_list = parseIPv4Addresses(info.parsed_addresses())
     ipv6_list = parseIPv6Addresses(info.parsed_addresses())
 
+    if ipv4_list[0] == "127.0.0.1":
+        ipv4_list = [ip_address]
+
     # split by . last element is an empty space
     domain = info.server.split(".")
     domain.reverse()
