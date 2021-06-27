@@ -126,6 +126,6 @@ Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env
 - `204 Unregistered` 
 - `404 Service not found` 
 
-
+## Troubleshooting
 
 
