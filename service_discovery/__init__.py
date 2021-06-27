@@ -312,10 +312,7 @@ class ServicesRoute(Resource):
             new_service = ServiceInfo(
                 parsedType,
                 wildcard_name,
-                addresses=[
-                    socket.inet_aton(ip_address),
-                    socket.inet_aton(ipv6_address),
-                ],
+                addresses=[socket.inet_aton(ip_address)],
                 port=args.service["port"],
                 server=str(socket.gethostname() + "."),
                 properties=args.service["txtRecord"],
