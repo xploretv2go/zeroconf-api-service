@@ -116,6 +116,9 @@ def serviceToOutput(info):
     ipv4_list = parseIPv4Addresses(info.parsed_addresses())
     ipv6_list = parseIPv6Addresses(info.parsed_addresses())
 
+    print(ipv4_list)
+    print(ipv6_list)
+
     if ipv4_list[0] == "127.0.0.1":
         ipv4_list = [ip_address]
 
