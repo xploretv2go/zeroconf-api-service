@@ -8,7 +8,7 @@ logFile="${parent_path}/logs/cronlog"
 remove_cronjob () { 
     echo "Removing Zeroconf API cronjob"
     crontab -l > newcron
-    sed -i '/\@reboot.*\(launcher.sh\).*/d' newcron
+    sed -e '/\@reboot.*launcher.sh.*$/d' newcron
     crontab newcron
 	crontab -l | grep -i "$launcher"
 	if [ $? -eq 0 ]
