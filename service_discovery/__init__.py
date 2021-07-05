@@ -44,6 +44,14 @@ def get_db():
     return db
 
 
+# Initialize types shelf DB
+def get_types_db():
+    db = getattr(g, "_database", None)
+    if db is None:
+        db = g._database = shelve.open("types")
+    return db
+
+
 # shelf DB teardown
 @app.teardown_appcontext
 def teardown_db(exception):
@@ -59,7 +67,7 @@ def clear_db(shelf):
 
 class ZeroConf:
     def __init__(self):
-        self.zeroconf = Zeroconf(ip_version=IPVersion.V4Only)
+        self.zeroconf = Zeroconf(ip_version=IPVersion.All)
 
     @property
     def getZeroconf(self):
@@ -116,11 +124,9 @@ def serviceToOutput(info):
     ipv4_list = parseIPv4Addresses(info.parsed_addresses())
     ipv6_list = parseIPv6Addresses(info.parsed_addresses())
 
-    print(ipv4_list)
-    print(ipv6_list)
-
     if ipv4_list[0] == "127.0.0.1":
         ipv4_list = [ip_address]
+        ipv6_list = [ipv6_address]
 
     # split by . last element is an empty space
     domain = info.server.split(".")
@@ -144,27 +150,6 @@ def serviceToOutput(info):
     return service
 
 
-@app.before_first_request
-def selfRegister():
-    props = {"get": "/a1/xploretv/v1/zeroconf"}
-
-    print(ipv6_address)
-
-    service = ServiceInfo(
-        "_http._tcp.local.",
-        "ZeroConf Service Discovery API at "
-        + socket.gethostname()
-        + "._http._tcp.local.",
-        addresses=[socket.inet_aton(ip_address), socket.inet_aton(ip_address)],
-        port=int(os.getenv("PORT")),
-        properties=props,
-        server=str(socket.gethostname() + "."),
-    )
-
-    zeroconf = zeroconfGlobal.getZeroconf
-    zeroconf.register_service(service)
-
-
 # Define the index route and display readme on the page
 @app.route("/")
 def index():
@@ -182,9 +167,7 @@ def index():
 
 collector = Collector()
 services = list(
-    ZeroconfServiceTypes.find(
-        zc=zeroconfGlobal.getZeroconf, ip_version=IPVersion.V4Only
-    )
+    ZeroconfServiceTypes.find(zc=zeroconfGlobal.getZeroconf, ip_version=IPVersion.All)
 )
 
 # Add additional subtypes to the ones found
@@ -197,6 +180,13 @@ services.extend(
         "_mqtt._tcp.local.",
         "_ssh._tcp.local.",
         "_http._tcp.local.",
+        "_hue._tcp.local.",
+        "_hap._tcp.local.",
+        "_airplay._tcp.local.",
+        "_ipp._tcp.local.",
+        "_privet._tcp.local.",
+        "_smb._tcp.local.",
+        "_afpovertcp._tcp.local.",
     ]
 )
 
@@ -204,6 +194,26 @@ services = [x if "local." in x else x + "local." for x in services]
 browser = ServiceBrowser(
     zeroconfGlobal.getZeroconf, services, handlers=[collector.on_service_state_change]
 )
+
+
+@app.before_first_request
+def selfRegister():
+    props = {"get": "/a1/xploretv/v1/zeroconf"}
+
+    service = ServiceInfo(
+        "_http._tcp.local.",
+        "ZeroConf Service Discovery API at "
+        + socket.gethostname()
+        + "._http._tcp.local.",
+        addresses=[socket.inet_aton("127.0.0.1")],
+        port=int(os.getenv("PORT")),
+        properties=props,
+        server=str(socket.gethostname() + "."),
+    )
+
+    print(service)
+    zeroconf = zeroconfGlobal.getZeroconf
+    zeroconf.register_service(service)
 
 
 class ServicesRoute(Resource):
@@ -315,11 +325,13 @@ class ServicesRoute(Resource):
             new_service = ServiceInfo(
                 parsedType,
                 wildcard_name,
-                addresses=[socket.inet_aton(ip_address)],
+                addresses=[socket.inet_aton("127.0.0.1")],
                 port=args.service["port"],
-                server=str(socket.gethostname() + "."),
                 properties=args.service["txtRecord"],
+                server=str(socket.gethostname() + "."),
             )
+
+            print(new_service)
             zeroconf = zeroconfGlobal.getZeroconf
             zeroconf.register_service(new_service)
             shelf[(wildcard_name).lower()] = new_service
