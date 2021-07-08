@@ -20,9 +20,11 @@ from zeroconf import (
 )
 
 load_dotenv()
-iface = netifaces.gateways()["default"][netifaces.AF_INET][1]
-ip_address = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]["addr"]
-ipv6_address = netifaces.ifaddresses(iface)[netifaces.AF_INET6][0]["addr"]
+
+if "default" in netifaces.gateways():
+    iface = netifaces.gateways()["default"][netifaces.AF_INET][1]
+    ip_address = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]["addr"]
+    ipv6_address = netifaces.ifaddresses(iface)[netifaces.AF_INET6][0]["addr"]
 
 # Create an instance of Flask
 app = Flask(__name__)
@@ -124,7 +126,7 @@ def serviceToOutput(info):
     ipv4_list = parseIPv4Addresses(info.parsed_addresses())
     ipv6_list = parseIPv6Addresses(info.parsed_addresses())
 
-    if ipv4_list[0] == "127.0.0.1":
+    if ipv4_list[0] == "127.0.0.1" and not ip_address and not ipv6_address:
         ipv4_list = [ip_address]
         ipv6_list = [ipv6_address]
 
