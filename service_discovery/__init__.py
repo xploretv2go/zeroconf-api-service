@@ -71,7 +71,7 @@ def clear_db(shelf):
 
 class ZeroConf:
     def __init__(self):
-        self.zeroconf = Zeroconf(ip_version=IPVersion.All)
+        self.zeroconf = Zeroconf(ip_version=IPVersion.V4Only)
 
     @property
     def getZeroconf(self):
@@ -171,7 +171,9 @@ def index():
 
 collector = Collector()
 services = list(
-    ZeroconfServiceTypes.find(zc=zeroconfGlobal.getZeroconf, ip_version=IPVersion.All)
+    ZeroconfServiceTypes.find(
+        zc=zeroconfGlobal.getZeroconf, ip_version=IPVersion.V4Only
+    )
 )
 
 # Add additional subtypes to the ones found
