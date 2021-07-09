@@ -22,8 +22,8 @@ from zeroconf import (
 load_dotenv()
 
 if "default" in netifaces.gateways():
-    iface = netifaces.gateways()["default"][netifaces.AF_INET][1]
     print(netifaces.gateways())
+    iface = netifaces.gateways()["default"][netifaces.AF_INET][1]
     ip_address = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]["addr"]
     ipv6_address = netifaces.ifaddresses(iface)[netifaces.AF_INET6][0]["addr"]
 
