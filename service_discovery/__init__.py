@@ -48,7 +48,7 @@ def get_db():
 def get_types_db():
     db = getattr(g, "_database", None)
     if db is None:
-        db = g._database = shelve.open("types.db")
+        db = g._database = shelve.open("types")
     return db
 
 
