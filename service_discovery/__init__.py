@@ -138,6 +138,8 @@ def serviceToOutput(info):
     domain = info.server.split(".")
     domain.reverse()
 
+    print(domain)
+
     service = {
         "name": info.name.split(".")[0],
         "hostName": info.server,
@@ -227,7 +229,6 @@ browser = ServiceBrowser(
 )
 
 
-@app.before_first_request
 def selfRegister():
     props = {"get": "/a1/xploretv/v1/zeroconf"}
 
@@ -245,6 +246,9 @@ def selfRegister():
     print(service)
     zeroconf = zeroconfGlobal.getZeroconf
     zeroconf.register_service(service)
+
+
+selfRegister()
 
 
 class ServicesRoute(Resource):
