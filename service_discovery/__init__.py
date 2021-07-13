@@ -229,6 +229,7 @@ browser = ServiceBrowser(
 )
 
 
+@app.before_first_request
 def selfRegister():
     props = {"get": "/a1/xploretv/v1/zeroconf"}
 
