@@ -130,7 +130,7 @@ def serviceToOutput(info):
     ipv4_list = parseIPv4Addresses(info.parsed_addresses())
     ipv6_list = parseIPv6Addresses(info.parsed_addresses())
 
-    if ipv4_list[0] == "127.0.0.1" and not ip_address and not ipv6_address:
+    if ipv4_list[0] == "127.0.0.1":
         ipv4_list = [ip_address]
         ipv6_list = [ipv6_address]
 
@@ -185,7 +185,6 @@ with app.app_context():
         shelf_types["type_dict"] = type
 
     types_list_tmp = dict(type_dict)
-    # print(types_list_tmp.keys())
     types_list = list(types_list_tmp.keys())
     shelf_types.close()
 
