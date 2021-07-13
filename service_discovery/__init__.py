@@ -249,9 +249,6 @@ def selfRegister():
     zeroconf.register_service(service)
 
 
-selfRegister()
-
-
 class ServicesRoute(Resource):
     logging.basicConfig(level=logging.DEBUG)
 
