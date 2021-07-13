@@ -48,7 +48,7 @@ def get_db():
 def get_types_db():
     db = getattr(g, "_database", None)
     if db is None:
-        db = g._database = shelve.open("types")
+        db = g._database = shelve.open("types.db")
     return db
 
 
@@ -198,7 +198,7 @@ services = list(
 )
 services = [x if "local." in x else x + "local." for x in services]
 
-# Extend service types from the types DB
+# Extend service types from
 services.extend(types_list)
 
 # Add additional subtypes to the ones found
