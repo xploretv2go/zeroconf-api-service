@@ -8,8 +8,7 @@ import logging
 from dotenv import load_dotenv
 import re
 from flask import jsonify
-
-# import netifaces
+import netifaces
 
 from zeroconf import (
     IPVersion,
@@ -22,11 +21,11 @@ from zeroconf import (
 
 load_dotenv()
 
-# if "default" in netifaces.gateways():
-#     print(netifaces.gateways())
-#     iface = netifaces.gateways()["default"][netifaces.AF_INET][1]
-#     ip_address = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]["addr"]
-#     ipv6_address = netifaces.ifaddresses(iface)[netifaces.AF_INET6][0]["addr"]
+
+if "default" in netifaces.gateways():
+    iface = netifaces.gateways()["default"][netifaces.AF_INET][1]
+    ip_address = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]["addr"]
+    ipv6_address = netifaces.ifaddresses(iface)[netifaces.AF_INET6][0]["addr"]
 
 # Create an instance of Flask
 app = Flask(__name__)
@@ -34,10 +33,7 @@ app = Flask(__name__)
 # Create the API
 api = Api(app)
 
-# Set CORS policy
-# CORS(app, resources={r"/*": {"origins": "*"}})
-app.config["CORS_HEADERS"] = "Content-Type"
-CORS(app)
+types_list = []
 
 
 # Initialize shelf DB
@@ -67,6 +63,12 @@ def teardown_db(exception):
 def clear_db(shelf):
     for key in shelf.keys():
         del shelf[key]
+
+
+# Set CORS policy
+# CORS(app, resources={r"/*": {"origins": "*"}})
+app.config["CORS_HEADERS"] = "Content-Type"
+CORS(app)
 
 
 class ZeroConf:
@@ -128,9 +130,9 @@ def serviceToOutput(info):
     ipv4_list = parseIPv4Addresses(info.parsed_addresses())
     ipv6_list = parseIPv6Addresses(info.parsed_addresses())
 
-    # if ipv4_list[0] == "127.0.0.1" and not ip_address and not ipv6_address:
-    #     ipv4_list = [ip_address]
-    #     ipv6_list = [ipv6_address]
+    if ipv4_list[0] == "127.0.0.1" and not ip_address and not ipv6_address:
+        ipv4_list = [ip_address]
+        ipv6_list = [ipv6_address]
 
     # split by . last element is an empty space
     domain = info.server.split(".")
@@ -169,19 +171,43 @@ def index():
     return {"services": services_discovered}, 200
 
 
+with app.app_context():
+    shelf_types = get_types_db()
+    services = list(
+        ZeroconfServiceTypes.find(
+            zc=zeroconfGlobal.getZeroconf, ip_version=IPVersion.V4Only
+        )
+    )
+    services = [x if "local." in x else x + "local." for x in services]
+    type_dict = dict.fromkeys(services, "types")
+
+    for type in type_dict:
+        shelf_types["type_dict"] = type
+
+    types_list_tmp = dict(type_dict)
+    # print(types_list_tmp.keys())
+    types_list = list(types_list_tmp.keys())
+    shelf_types.close()
+
+
 collector = Collector()
 services = list(
     ZeroconfServiceTypes.find(
         zc=zeroconfGlobal.getZeroconf, ip_version=IPVersion.V4Only
     )
 )
+services = [x if "local." in x else x + "local." for x in services]
+
+# Extend service types from the types DB
+services.extend(types_list)
 
 # Add additional subtypes to the ones found
 services.extend(
     [
         "_mqtt2go._http._tcp.local.",
         "_smb._tcp.local.",
-        "_mqtt2go._sub._http._tcp.",
+        "_mqtt2go._sub._http._tcp.local.",
+        "_flametouch._tcp.local.",
         "_flametouch._tcp.local.",
         "_mqtt._tcp.local.",
         "_ssh._tcp.local.",
@@ -196,7 +222,7 @@ services.extend(
     ]
 )
 
-services = [x if "local." in x else x + "local." for x in services]
+
 browser = ServiceBrowser(
     zeroconfGlobal.getZeroconf, services, handlers=[collector.on_service_state_change]
 )
