@@ -1,6 +1,9 @@
 #!/bin/sh
 
-[ "$UID" -eq 0 ] || { echo "This script must be run as root."; exit 1;}
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 
+   exit 1
+fi
 
 #Defining variable for launcher
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
@@ -29,18 +32,14 @@ else
 fi
 
 
-
 if [[ $(sed -n '/^::1/p' /etc/hosts) == *"ip6-localzeroconf"* ]]; then
 	echo "IPv6 Host already modified"
 else
-	sed -i '/^::1/ s/$/ ip6-localzeroconf/' /etc/hosts
+	sed -i '/^::1/ s/$/ localzeroconf/' /etc/hosts
 	echo "IPv6 Host successfully modified"
 fi
 
 echo "Localzeroconf alias set!"
-
-
-
 
 #Adding Zeroconf API to crontab
 add_cronjob () { 
