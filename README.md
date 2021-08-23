@@ -5,6 +5,7 @@ You need to list and resolve or announce existing Zeroconf services, but you can
 
 This service browses the published zeroconf services in the local network of the server where the service is running and returns the results of the browse through the specified API GET endpoint. A service can be also registered by the API user through the POST method in /services endpoint.
 
+The part of the service is a module which scans the network for availible types of services present on the network at any given time when the service is started. This module plays an important role in this project as it the found types are stored into a compact database storage(https://docs.python.org/3/library/shelve.html). These types are upon every start of the API seeded into the handler which collects the availible services on the network. This behaviour results in API being able to discover more services when it's restarted.  
 
 Compatible with: 
   * Avahi
