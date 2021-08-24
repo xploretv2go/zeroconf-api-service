@@ -28,7 +28,8 @@ To deploy the Zeroconf service/API on a device such as Rpi. make sure you have a
 5. After the restart check the newly created log file found in `zeroconf.api.service/logs/cronlog` to see if the log is populated with logging output from API
 6. You can configure the port to be used by the API in `/zeroconf.api.service/.env` file
 
-To test the API through the command line use the following command to call the GET endpoint
+To test the API through the command line use the following command to call the GET endpoint:
+
 `curl -X 'GET' \
   'https://localhost/a1/xploretv/v1/zeroconf' \
   -H 'accept: application/json'
