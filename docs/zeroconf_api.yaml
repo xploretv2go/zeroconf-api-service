@@ -1,0 +1,387 @@
+openapi: 3.0.0
+info:
+  description: |-
+    You need to list and resolve or announce existing Zeroconf services, but you cannot implement your own mDNS/DNS-SD feature? Then this REST API is the right solution, because you can browse and register Zeroconf services via it.
+  
+    # Why this API service?
+    
+    This API service performs the browsing and registration of Zeroconf services on behalf of clients that  cannot support Zeroconf directly, and provides or processes the necessary Zeroconf service information. Client-side processes using JavaScript in a web browser are good examples. 
+    
+    Appliances with embedded mDNS/DNS-SD stacks normally provide programming APIs for integrating browsing and registration of services around mDNS/DNS-SD, but usually only at the operating system level. As a result, these programming APIs are not accessible to JavaScript applications running in a closed web browser environment. 
+    
+    The REST API proposed here is intended to enable, not only but primarily, JavaScript applications to easily interact with the host device's mDNS/DNS-SD service deamon.
+
+    # About this API service?
+
+    Zero Configuration Networking API (ZeroConf API) provides an endpoint to browse and register data from a ZeroConf function running within the local area network.
+    
+    Calling the API to browse the network returns a JSON array with all devices and services seen on the local network. The array contains the entire mDNS records of each discoverable device/service and the date of the last entry change in the JSON array.
+
+    The data output of the JSON data is formatted and beautified in a human-friendly way.
+
+    Calling the API to register a service results in making a service known on the local network according to the provided contents of the respective data fields.
+
+    # Main relevant data fields and informations are:
+
+    - **address(es)** - The IP addresses of an mDNS advertised service (IPv4/IPv6).
+    - **name** - The service name of an mDNS advertised service.
+    - **hostName** - The host name for an mDNS advertised service.
+    - **port** - The port number for an mDNS advertised service.
+    - **type/subtype** - DNS-SD main type and subtypes for an mDNS advertised service.
+    - **txtRecord** - Metadata for an mDNS advertised service.
+
+    On the one hand, the API can be called via the local host URL but is additionally registered in the local network according to Zero Configuration Networking and thus can be recognised by any ZeroConf browser.
+     
+    # Usage and deployment:
+
+    **Use case #1:** To access the API from closed Brower's JS Engines, it must run on the same device (e.g. STB) and conform to the following convention:
+      
+      ```
+      http(s)://localhost/a1/xploretv/v1/zeroconf
+      ```
+    **Use case #2:** To access the API from applications or services running on other devices in the same local network, the API must be announced according to Zeroconf:
+    
+      ```
+     <name>Secure Zeroconf-API at %h</name>
+       <service>
+         <type>_https._tcp</type>
+         <port>443</port>
+         <txt-record>path=/a1/xploretv/v1/zeroconf</txt-record>
+       </service>  
+      ```
+    
+      ```
+     <name>Zeroconf-API at %h</name>
+       <service>
+         <type>_http._tcp</type>
+         <port>80</port>
+         <txt-record>path=/a1/xploretv/v1/zeroconf</txt-record>
+       </service>  
+      ```
+      *Note: "%h" needs to be replaced by the local host name.*
+      
+    # Further implementation notes:
+
+      Optionally, changes detected by the Zeroconf service are also mapped as an **event** in the browser JS engine of the same device on which the Zeroconf service is running, so that the **EventListener** interface can handle an event sent by the associated **EventTarget** object accordingly.
+      
+    # References and implementation definitions:
+
+
+    **AVAHI** is a Zeroconf implementation and part of most Linux distributions and is installed by default on some. This is the only reason why it is referred to here and its principles are applied in a similar way.
+
+    - Request/Response attribute fields in this API are basically compliant with the "**Xml Tags**" used in **AVAHI**
+    - The API comply with the principles and behaviour for browsing and registering services via **AVAHI** as well.
+    - **AVAHI SERVICE DISCOVERY SUITE** is a free zero-configuration networking (zeroconf) implementation
+
+    Specification and additional information regarding **AVAHI** can be found via the following links:
+
+    - [Avahi - Official website](http://avahi.org/)
+    - [Avahi - Documentation of the programming APIs](https://www.avahi.org/doxygen/html/)
+    - [Avahi - ArchWiki entry](https://wiki.archlinux.org/index.php/avahi)
+    - [Avahi - XML fragments describing DNS-SD service data](https://linux.die.net/man/5/avahi.service)
+    - [Avahi - Github repository](https://github.com/lathiat/avahi/blob/master/README)
+    - [Avahi - Service Type Database](https://github.com/lathiat/avahi/blob/master/service-type-database/service-types)
+    
+    # Note:
+
+    ```
+    Although the API is specified by reference to the AVAHI conventions for convenience, the API is completely independent of them in terms of implementation and can make use of any mDNS/DNS-SD protocol suite available as part of the host device's firmware or middleware.
+    ```
+    
+  version: 1.0.0-oas3
+  title: Zero Configuration Networking API
+  contact:
+    email: franz.kroepfl@A1.group
+    url: https://xploretv2go.github.io/
+  license:
+    name: MIT license
+    url: 'https://opensource.org/licenses/MIT'
+servers:
+  - url: '{protocol}://{hostname}/a1/xploretv/v1'
+    variables:
+      hostname:
+        default: localhost
+        enum:
+          - localhost
+          - "Secure Zeroconf-API at %h"
+        description: >-
+          *Note: "%h" needs to be replaced by the local host name.*
+          1) In the case where the application needs to make an API call on the same device, use the **localhost** value.
+          2) When the application initates an API call from a remote device, you must call the remote services according to Zeroconf Service resolution.
+          The documentation about servers definition could be found here 'https://swagger.io/docs/specification/api-host-and-base-path'
+      protocol:
+        enum:
+          - http
+          - https
+        default: https
+tags:
+  - name: Services
+    description: Operations available to applications in local network
+paths:
+  /zeroconf:
+    get:
+      tags:
+        - Services
+      summary: Returns an array of JSON objects with the Zeroconf service data provided by the lowlevel middleware fetched from the local network.
+      operationId: browseServices
+      description:  >-
+        This operation lists all available Zeroconf compliant devices/services found in the local network
+      responses:
+        '200':
+          description: services found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Browse'
+        '400':
+          description: bad input parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '405':
+          description: Method Not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags:
+        - Services
+      summary: Passes Zeroconf service data to be announced by the lowlevel middleware on the local network.
+      operationId: registerService
+      description:  >-
+       This operation registers a new service based on the atttributes provided in the request body of the service object in the
+       following format 
+       <br/>
+       
+       - if attribute **replaceWildcards** is set to '**yes**' the Zeronf service name will be published as "**<service-name> at <host-name>**".
+       <br/>
+       
+       
+       - if attribute **replaceWildcards** is set to '**no**' the Zeroconf service name will be published as "**<service-name>**".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+      responses:
+        '201':
+           description: service published
+           content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Register'
+        '400':
+          description: bad input parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '405':
+          description: Method Not allowed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error' 
+    
+  /zeroconf/{id}:
+
+      parameters:
+          - in: path
+            schema:
+              type: string
+            name: id
+            required: true
+            description: The id of the service.
+      delete:
+         summary:   Unregisters a service previously registered by the zeroconf API, based on the id of the service passed through the parameters. 
+         operationId: unregisterService
+         tags: 
+            - Services
+         responses:
+          '204':
+             description: >-
+                          This operation unregisters service based on the name of the service passed in url
+             content:
+              application/json:
+                schema:
+                    $ref: '#/components/schemas/Unregister'   
+          '404':
+             description: Service not found
+             content:
+              application/json:
+                schema:
+                    $ref: '#/components/schemas/Error' 
+     
+components:
+  schemas:
+    Browse:
+      type: object
+      required:
+        - addresses
+        - name
+      properties:
+        id: 
+          type: number
+          example: 1
+        addresses:
+          type: object
+          properties:
+            ipv6:
+              type: array
+              items: 
+                type: string
+            ipv4:
+              type: array
+              items: 
+                type: string
+          example: { 
+                ipv6: ['fe80::c27:d753:2693:c39d', '::1'],
+                ipv4: ['192.168.178.24'] 
+          }
+        name:
+          type: string
+          example: 'resolved-service-name._tcp.local.'
+        domainName:
+          type: string
+          example: 'local.'
+        hostName:
+          type: string
+          example: 'service-originator.local.'
+        service:
+          type: object
+          required: 
+            - port
+            - type
+          properties:
+            txtRecord: 
+              type: object
+            port:
+              type: number
+            type:
+              type: string
+    
+          example: {
+            type: '_http._tcp.',
+            port: 631,
+            txtRecord: {
+              path: "/getAccess",
+              product: "(GPL Ghostscript)",
+              provider: "provider",
+              version: "1.0",
+            }
+          }
+    Register:
+      type: object
+      required:
+          - name
+          - service
+      properties:
+        name:
+          type: string
+          example: "desired-service-name._http._tcp.local."
+        replaceWildcards:
+          type: boolean
+          example: True
+        serviceProtocol:
+          type: string
+          enum: [ipv4, ipv6, any]
+          example: 'any'   
+        service:  
+          type: object
+          required:
+            - type
+            - port
+          properties:
+            txtRecord: 
+              type: object
+            port:
+              type: number
+            type:
+              type: string
+            subtypes:
+              type: string  
+          example: {
+            type: '_http._tcp.',
+            subtype: "_universal._sub._ipp._http._tcp.",
+            port: 631,
+            txtRecord:{
+              path: "/getAccess",
+              product: "(GPL Ghostscript)",
+              provider: "provider",
+              version: "1.0",
+            }
+          }
+    Unregister:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: number
+          example: 01
+    Error:
+        description: >-
+          Used when an API throws an Error, typically with a HTTP error
+          response-code (3xx, 4xx, 5xx)
+        type: object
+        required:
+          - code
+          - reason
+        properties:
+          code:
+            type: string
+            description: 'Application relevant detail, defined in the API or a common list.'
+          reason:
+            type: string
+            description: >-
+              Explanation of the reason for the error which can be shown to a client
+              user.
+          message:
+            type: string
+            description: >-
+              More details and corrective actions related to the error which can be
+              shown to a client user.
+          status:
+            type: string
+            description: HTTP Error code extension
+          referenceError:
+            type: string
+            format: uri
+            description: URI of documentation describing the error.
