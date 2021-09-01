@@ -30,9 +30,7 @@ To deploy the Zeroconf service/API on a device such as Rpi. make sure you have a
 
 To test the API through the command line use the following command to call the GET endpoint:
 
-`curl -X 'GET' \
-  'https://localhost/a1/xploretv/v1/zeroconf' \
-  -H 'accept: application/json'
+`curl -X 'GET' 'http://localhost:15051/a1/xploretv/v1/zeroconf'
 `
 
 
