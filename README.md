@@ -32,7 +32,34 @@ To test the API through the command line use the following command to call the G
 
 `curl -X 'GET' 'http://localhost:15051/a1/xploretv/v1/zeroconf'
 `
+The output shown in the terminal after the command execution will have the following structure:
 
+`
+{
+    "services": [
+        {
+            "name": "ZeroConf Service Discovery API at Frantiseks-MacBook-Pro",
+            "hostName": "Frantiseks-MacBook-Pro.local.",
+            "domainName": "local",
+            "addresses": {
+                "ipv4": [
+                    "192.168.0.19"
+                ],
+                "ipv6": [
+                    "fe80::1cb5:b8:f032:58d3%en0"
+                ]
+            },
+            "service": {
+                "type": "_http._tcp.local.",
+                "port": 15051,
+                "txtRecord": {
+                    "get": "/a1/xploretv/v1/zeroconf"
+                }
+            }
+        }
+    ]
+}
+`
 
 
 Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env` file
@@ -75,38 +102,30 @@ Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env
 - `200 OK` on success
 
 ```json
-[
-  {
-            "id": 1,
-            "name": "Fran's MacBook Pro._rfb._tcp.local.",
-            "hostName": "frans-mbp.fritz.box",
-            "domainName": "Frans-MacBook-Pro.local.",
+{
+    "services": [
+        {
+            "name": "ZeroConf Service Discovery API at Frantiseks-MacBook-Pro",
+            "hostName": "Frantiseks-MacBook-Pro.local.",
+            "domainName": "local",
             "addresses": {
-                "ipv4": "192.168.178.58",
-                "ipv6": "fe80::1893:e42f:9c41:1427"
+                "ipv4": [
+                    "192.168.0.19"
+                ],
+                "ipv6": [
+                    "fe80::1cb5:b8:f032:58d3%en0"
+                ]
             },
             "service": {
-                "type": "_rfb._tcp.local.",
-                "port": 5900,
-                "txtRecord": {}
+                "type": "_http._tcp.local.",
+                "port": 15051,
+                "txtRecord": {
+                    "get": "/a1/xploretv/v1/zeroconf"
+                }
             }
-        },
-        {   
-            "id": 1,
-            "name": "Fran's MacBook Pro._flametouch._tcp.local.",
-            "hostName": "frans-mbp.fritz.box",
-            "domainName": "Frans-MacBook-Pro.local.",
-            "addresses": {
-                "ipv4": "192.168.178.58",
-                "ipv6": "fe80::1893:e42f:9c41:1427"
-            },
-            "service": {
-                "type": "_flametouch._tcp.local.",
-                "port": 1812,
-                "txtRecord": {}
-            }
-        },
-]
+        }
+    ]
+}
 ```
 ### Register a service
 
