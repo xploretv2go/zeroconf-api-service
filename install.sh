@@ -64,5 +64,5 @@ if [ -e $logFile ]
 then
 	echo "File '$logFile' is already created"
 else
-	echo "Please restart your raspberry pi to start the ZeroConfAPI"
+	echo "Please restart your device pi to start the ZeroConfAPI"
 fi
