@@ -14,9 +14,10 @@ Compatible with:
 ## Installing and running on a development server / localhost
 1. Clone the repository & navigate to directory and run:
 - `sudo git clone https://github.com/xploretv2go/zeroconf.api.service.git`
+- In case pip3 is not installed with python3 on the system run `sudo apt-get install python3-pip`
 - `sudo pip3 install -r requirements.txt`
 - `sudo python3 run.py`
-3. You're done!
+1. You're done!
 
 ## Deploying on a Rpi
 To deploy the Zeroconf service/API on a device such as Rpi. make sure you have avahi installed on the device
