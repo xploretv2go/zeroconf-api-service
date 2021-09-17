@@ -23,18 +23,18 @@ Compatible with:
 To deploy the Zeroconf service/API on a device such as Rpi. Make sure you have [Avahi](https://www.avahi.org/) installed on the device
 
 1. Make sure you have git version control installed. if not run:
---`sudo apt-get install git` 
+   - `sudo apt-get install git` 
 2. Navigate to you home directory where you wish to install the API service and type the command:
-   `sudo git clone https://github.com/xploretv2go/zeroconf.api.service.git`
+   - `sudo git clone https://github.com/xploretv2go/zeroconf.api.service.git`
 3. Run installation script as a root to install the API on to your device:
-   `sudo bash install.sh`
+   - `sudo bash install.sh`
 4. Restart the Rpi using the command 
-   `sudo reboot`
+   - `sudo reboot`
 5. After the restart check the newly created log file found in 
-   `zeroconf.api.service/logs/cronlog`
-    to see if the log is populated with logging output from API
+   - `zeroconf.api.service/logs/cronlog` 
+   - to see if the log is populated with logging output from API
 6. You can configure the port to be used by the API in file:
-   `/zeroconf.api.service/.env` 
+   - `/zeroconf.api.service/.env` 
 
 To test the API through the command line use the following command to call the GET endpoint:
 
