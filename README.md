@@ -20,10 +20,10 @@ Compatible with:
 1. You're done!
 
 ## Deploying on a Rpi
-To deploy the Zeroconf service/API on a device such as Rpi. make sure you have [Avahi](https://www.avahi.org/) installed on the device
+To deploy the Zeroconf service/API on a device such as Rpi. Make sure you have [Avahi](https://www.avahi.org/) installed on the device
 
-1. Make sure you have git version control installed. if not run: 
-   `sudo apt-get install git` 
+1. Make sure you have git version control installed. if not run:
+--`sudo apt-get install git` 
 2. Navigate to you home directory where you wish to install the API service and type the command:
    `sudo git clone https://github.com/xploretv2go/zeroconf.api.service.git`
 3. Run installation script as a root to install the API on to your device:
