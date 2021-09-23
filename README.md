@@ -72,6 +72,19 @@ The output shown in the terminal after the command execution will have the follo
 
 Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env` file
 
+## Installing and running on OpenWRT system
+1. make sure to update the packages first by running `opkg update`
+2. Install git-http package `opkg install git-http` and `opkg install ca-bundle`
+3. Clone this repo `git clone https://github.com/xploretv2go/zeroconf.api.service.git` in `/etc` folder
+4. Install python3 interpreter along with pip by running `opkg install python3` and `opkg install python3-pip`
+5. After installing python3 and pip run following command to update pip `pip3 install --upgrade pip`
+6. Run `sh install.sh` to install all the dependencies and set the crontab to start the API
+7. Reboot the system using `reboot` command.
+8. After the reboot run `/etc/init.d/cron start` to start cron
+
+Note: In case there's an issue during the installation of packages specified in `requirement.txt` such as package `netifaces` run command 
+`pip3 install wheel` or consider uninstalling python3 interpreter and installing python-dev package by running `opkg update` and `opkg install python-dev`
+
 
 ## Installing and running in a docker container
 1. Install Docker.
