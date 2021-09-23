@@ -42,7 +42,7 @@ To test the API through the command line use the following command to call the G
 
 The output shown in the terminal after the command execution will have the following structure:
 
-`
+```
 {
     "services": [
         {
@@ -67,7 +67,7 @@ The output shown in the terminal after the command execution will have the follo
         }
     ]
 }
-`
+```
 
 
 Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env` file
