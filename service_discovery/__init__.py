@@ -140,9 +140,9 @@ def serviceToOutput(info):
     domain.reverse()
 
     if "local" not in domain:
-        domain[2:2] = "local"
-        
-    print(domain)    
+        domain.inset(1, "local")
+
+    print(domain)
 
     service = {
         "name": info.name.split(".")[0],
