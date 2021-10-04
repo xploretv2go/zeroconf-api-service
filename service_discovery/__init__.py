@@ -140,7 +140,7 @@ def serviceToOutput(info):
     domain.reverse()
 
     if "local" not in domain:
-        domain.inset(1, "local")
+        domain.insert(1, "local")
 
     print(domain)
 
