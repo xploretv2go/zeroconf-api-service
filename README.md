@@ -42,7 +42,7 @@ To test the API through the command line use the following command to call the G
 
 The output shown in the terminal after the command execution will have the following structure:
 
-`
+```
 {
     "services": [
         {
@@ -67,7 +67,7 @@ The output shown in the terminal after the command execution will have the follo
         }
     ]
 }
-`
+```
 
 
 Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env` file
@@ -78,7 +78,7 @@ Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env
 3. Clone this repo `git clone https://github.com/xploretv2go/zeroconf.api.service.git` in `/etc` folder
 4. Install python3 interpreter along with pip by running `opkg install python3` and `opkg install python3-pip`
 5. After installing python3 and pip run following command to update pip `pip3 install --upgrade pip`
-6. Run `sh install.sh` to install all the dependencies and set the crontab to start the API
+6. Run `sh install-owrt.sh` to install all the dependencies and set the crontab to start the API
 7. Reboot the system using `reboot` command.
 8. After the reboot run `/etc/init.d/cron start` to start cron
 

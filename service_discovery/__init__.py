@@ -10,6 +10,9 @@ import re
 from flask import jsonify
 import netifaces
 
+
+# import netifaces
+
 from zeroconf import (
     IPVersion,
     ServiceBrowser,
@@ -66,7 +69,7 @@ def clear_db(shelf):
 
 
 # Set CORS policy
-# CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 app.config["CORS_HEADERS"] = "Content-Type"
 CORS(app)
 
@@ -137,8 +140,6 @@ def serviceToOutput(info):
     # split by . last element is an empty space
     domain = info.server.split(".")
     domain.reverse()
-
-    print(domain)
 
     service = {
         "name": info.name.split(".")[0],
