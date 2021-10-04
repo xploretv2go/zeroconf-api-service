@@ -143,9 +143,6 @@ def serviceToOutput(info):
         domain.insert(1, "local")
         info.name.insert(1, "local")
 
-    print(domain)
-    print(info.name)
-
     service = {
         "name": info.name.split(".")[0],
         "hostName": info.server,
