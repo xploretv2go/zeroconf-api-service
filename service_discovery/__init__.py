@@ -143,7 +143,7 @@ def serviceToOutput(info):
 
     if "local" not in domain:
         domain.insert(1, "local")
-        host_name = info.server = "local"
+        host_name = info.server + "local"
 
     service = {
         "name": info.name.split(".")[0],
