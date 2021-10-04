@@ -141,8 +141,10 @@ def serviceToOutput(info):
 
     if "local" not in domain:
         domain.insert(1, "local")
+        info.name.insert(1, "local")
 
     print(domain)
+    print(info.name)
 
     service = {
         "name": info.name.split(".")[0],
