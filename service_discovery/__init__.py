@@ -11,8 +11,6 @@ from flask import jsonify
 import netifaces
 
 
-# import netifaces
-
 from zeroconf import (
     IPVersion,
     ServiceBrowser,
@@ -140,6 +138,11 @@ def serviceToOutput(info):
     # split by . last element is an empty space
     domain = info.server.split(".")
     domain.reverse()
+
+    if "local" not in domain:
+        domain[2:2] = "local"
+        
+    print(domain)    
 
     service = {
         "name": info.name.split(".")[0],
