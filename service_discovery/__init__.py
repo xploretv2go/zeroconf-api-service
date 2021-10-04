@@ -139,13 +139,15 @@ def serviceToOutput(info):
     domain = info.server.split(".")
     domain.reverse()
 
+    host_name = info.server
+
     if "local" not in domain:
         domain.insert(1, "local")
-        info.name.insert(1, "local")
+        host_name = info.server = "local"
 
     service = {
         "name": info.name.split(".")[0],
-        "hostName": info.server,
+        "hostName": host_name,
         "domainName": "local",
         "addresses": {"ipv4": ipv4_list, "ipv6": ipv6_list},
         "service": {"type": info.type, "port": info.port, "txtRecord": {}},
