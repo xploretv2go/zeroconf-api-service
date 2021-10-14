@@ -236,7 +236,12 @@ browser = ServiceBrowser(
 
 @app.before_first_request
 def selfRegister():
-    props = {"get": "/a1/xploretv/v1/zeroconf"}
+    props = {
+        "get": "/a1/xploretv/v1/zeroconf",
+        "product": "ZeroConf API-Service",
+        "provider": "A1 Telekom Austria",
+        "version": "1.0",
+    }
 
     service = ServiceInfo(
         "_http._tcp.local.",
