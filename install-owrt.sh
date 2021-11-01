@@ -45,7 +45,7 @@ echo "Localzeroconf alias set!"
 add_cronjob () { 
     echo "Adding Zeroconf API as a cronjob"
     crontab -l > newcron
-    echo "@reboot sleep 30 && sh ${launcher} > $logFile 2>&1" >> newcron
+    echo "@reboot sleep 10 && sh ${launcher} > $logFile 2>&1" >> newcron
     crontab newcron
     rm -f newcron
 }
