@@ -10,6 +10,8 @@ parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
 launcher="${parent_path}/launcher-owrt.sh"
 logFile="${parent_path}/logs/cronlog"
+registerAPIScript="${parent_path}/run-curl.sh"
+
 
 #Testing if logs folder exists
 if [ -e "${parent_path}/logs" ]
@@ -46,6 +48,7 @@ add_cronjob () {
     echo "Adding Zeroconf API as a cronjob"
     crontab -l > newcron
     echo "@reboot sleep 10 && sh ${launcher} > $logFile 2>&1" >> newcron
+	echo "@reboot sleep 15 && sh ${registerAPIScript}" >> newcron
     crontab newcron
     rm -f newcron
 }
