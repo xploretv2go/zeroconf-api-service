@@ -10,7 +10,7 @@ remove_cronjob () {
     crontab -l > newcron
     sed -e '/\@reboot.*launcher.sh.*$/d' newcron
     crontab newcron
-	crontab -l | grep -i "$launcher" | crontab -
+	crontab -l | grep -i "@reboot sleep 10 && sh ${launcher} > $logFile 2>&1" | crontab -r
 	if [ $? -eq 0 ]
 		then
 			echo "Cronjob removed!"
