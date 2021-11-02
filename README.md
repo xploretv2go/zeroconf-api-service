@@ -27,7 +27,7 @@ To deploy the Zeroconf service/API on a device such as Rpi. Make sure you have [
 2. Navigate to you home directory where you wish to install the API service and type the command:
    - `sudo git clone https://github.com/xploretv2go/zeroconf.api.service.git`
 3. Run installation script as a root to install the API on to your device:
-   - `sudo bash install.sh`
+   - `sudo bash install.sh` or `sudo sh install.sh`
 4. Restart the Rpi using the command 
    - `sudo reboot`
 5. After the restart check the newly created log file found in 

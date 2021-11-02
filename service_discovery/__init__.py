@@ -243,6 +243,9 @@ def selfRegister():
         "version": "1.0",
     }
 
+    for info in collector.infos:
+        print(str(info))
+
     service = ServiceInfo(
         "_http._tcp.local.",
         "ZeroConf Service Discovery API at "
@@ -256,7 +259,11 @@ def selfRegister():
 
     print(service)
     zeroconf = zeroconfGlobal.getZeroconf
-    zeroconf.register_service(service)
+
+    try:
+        zeroconf.register_service(service)
+    except:
+        print(f"could not register {service}, service has already been registered")
 
 
 class ServicesRoute(Resource):
@@ -374,10 +381,15 @@ class ServicesRoute(Resource):
                 server=str(socket.gethostname() + "."),
             )
 
-            print(new_service)
-            zeroconf = zeroconfGlobal.getZeroconf
-            zeroconf.register_service(new_service)
-            shelf[(wildcard_name).lower()] = new_service
+            try:
+                print(new_service)
+                zeroconf = zeroconfGlobal.getZeroconf
+                zeroconf.register_service(new_service)
+                shelf[(wildcard_name).lower()] = new_service
+            except:
+                print(
+                    f"could not register {service}, service has already been registered"
+                )
 
         return {"code": 201, "message": "Service registered", "status": args}, 201
 

@@ -47,7 +47,7 @@ add_cronjob () {
     echo "Adding Zeroconf API as a cronjob"
     crontab -l > newcron
     echo "@reboot sleep 10 && sh ${launcher} > $logFile 2>&1" >> newcron
-	echo "@reboot sleep 15 && sh ${registerAPIScript}" >> newcron
+	echo "@reboot sleep 30 && sh ${registerAPIScript}" >> newcron
     crontab newcron
     rm -f newcron
 }
