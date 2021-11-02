@@ -36,7 +36,7 @@ fi
 if [[ $(sed -n '/^::1/p' /etc/hosts) == *"ip6-localzeroconf"* ]]; then
 	echo "IPv6 Host already modified"
 else
-	sed -i '/^::1/ s/$/ localzeroconf/' /etc/hosts
+	sed -i '/^::1/ s/$/ ip6-localzeroconf/' /etc/hosts
 	echo "IPv6 Host successfully modified"
 fi
 
