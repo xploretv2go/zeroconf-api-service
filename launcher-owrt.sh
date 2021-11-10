@@ -5,5 +5,5 @@
 
 cd "$(dirname "$0")"
 pip3 install -r requirements.txt
-python3 run.py
+sudo python3 service_discovery/__init__.py runserver
 cd /

@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 import re
 from flask import jsonify
 import netifaces
+from flask_script import Manager, Server
 
 
 from zeroconf import (
@@ -20,19 +21,21 @@ from zeroconf import (
     ZeroconfServiceTypes,
 )
 
-load_dotenv()
 
+load_dotenv()
 
 if "default" in netifaces.gateways():
     iface = netifaces.gateways()["default"][netifaces.AF_INET][1]
     ip_address = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]["addr"]
     ipv6_address = netifaces.ifaddresses(iface)[netifaces.AF_INET6][0]["addr"]
 
+
 # Create an instance of Flask
 app = Flask(__name__)
 
 # Create the API
 api = Api(app)
+
 
 types_list = []
 
@@ -68,7 +71,8 @@ def clear_db(shelf):
 
 # Set CORS policy
 CORS(app, resources={r"/*": {"origins": "*"}})
-app.config["CORS_HEADERS"] = "Content-Type"
+
+# app.config["CORS_HEADERS"] = "Content-Type"
 CORS(app)
 
 
@@ -85,6 +89,44 @@ class ZeroConf:
 # this way they can all be initized during the startup
 # instantiate global zeroconf object
 zeroconfGlobal = ZeroConf()
+
+
+def selfRegister():
+    props = {
+        "get": "/a1/xploretv/v1/zeroconf",
+        "product": "ZeroConf API-Service",
+        "provider": "A1 Telekom Austria",
+        "version": "1.0",
+    }
+
+    for info in collector.infos:
+        print(str(info))
+
+    service = ServiceInfo(
+        "_http._tcp.local.",
+        "ZeroConf Service Discovery API at "
+        + socket.gethostname()
+        + "._http._tcp.local.",
+        addresses=[socket.inet_aton("127.0.0.1")],
+        port=int(os.getenv("PORT")),
+        properties=props,
+        server=str(socket.gethostname() + "."),
+    )
+
+    print(service)
+    zeroconf = zeroconfGlobal.getZeroconf
+
+    try:
+        zeroconf.register_service(service)
+    except:
+        print(f"could not register {service}, service has already been registered")
+
+
+class CustomServer(Server):
+    def __call__(self, app, *args, **kwargs):
+        selfRegister()
+        # Hint: Here you could manipulate app
+        return Server.__call__(self, app, *args, **kwargs)
 
 
 class Collector:
@@ -232,38 +274,6 @@ services.extend(
 browser = ServiceBrowser(
     zeroconfGlobal.getZeroconf, services, handlers=[collector.on_service_state_change]
 )
-
-
-@app.before_first_request
-def selfRegister():
-    props = {
-        "get": "/a1/xploretv/v1/zeroconf",
-        "product": "ZeroConf API-Service",
-        "provider": "A1 Telekom Austria",
-        "version": "1.0",
-    }
-
-    for info in collector.infos:
-        print(str(info))
-
-    service = ServiceInfo(
-        "_http._tcp.local.",
-        "ZeroConf Service Discovery API at "
-        + socket.gethostname()
-        + "._http._tcp.local.",
-        addresses=[socket.inet_aton("127.0.0.1")],
-        port=int(os.getenv("PORT")),
-        properties=props,
-        server=str(socket.gethostname() + "."),
-    )
-
-    print(service)
-    zeroconf = zeroconfGlobal.getZeroconf
-
-    try:
-        zeroconf.register_service(service)
-    except:
-        print(f"could not register {service}, service has already been registered")
 
 
 class ServicesRoute(Resource):
@@ -523,3 +533,15 @@ def internal_server_error(error):
 
 api.add_resource(ServicesRoute, "/a1/xploretv/v1/zeroconf")
 api.add_resource(ServiceRoute, "/a1/xploretv/v1/zeroconf/<string:identifier>")
+
+manager = Manager(app)
+
+
+@manager.command
+def runserver():
+    selfRegister()
+    app.run(host=os.getenv("HOST"), port=os.getenv("PORT"), debug=os.getenv("DEBUG"))
+
+
+if __name__ == "__main__":
+    manager.run()
