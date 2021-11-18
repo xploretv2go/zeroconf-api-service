@@ -72,7 +72,7 @@ def clear_db(shelf):
 # Set CORS policy
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# app.config["CORS_HEADERS"] = "Content-Type"
+app.config["CORS_HEADERS"] = "Content-Type"
 CORS(app)
 
 

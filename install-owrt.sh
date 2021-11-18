@@ -9,17 +9,7 @@ fi
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
 launcher="${parent_path}/launcher-owrt.sh"
-logFile="${parent_path}/logs/cronlog"
 
-#Testing if logs folder exists
-if [ -e "${parent_path}/logs" ]
-then
-	echo "Folder logs already exists"
-else
-	echo "Creating logs folder.."
-	mkdir ${parent_path}/logs
-    cd /
-fi
 
 echo "Modifying /etc/hosts file"
 
@@ -41,28 +31,11 @@ fi
 
 echo "Localzeroconf alias set!"
 
-#Adding Zeroconf API to crontab
-add_cronjob () { 
-    echo "Adding Zeroconf API as a cronjob"
-    crontab -l > newcron
-    echo "@reboot sleep 10 && sh ${launcher} > $logFile 2>&1" >> newcron
-    crontab newcron
-    rm -f newcron
-}
+cp /etc/zeroconf.api.service/zeroconf /overlay/lxc/iot/rootfs/etc/init.d 
 
-  
-crontab -l | grep "$launcher"
-if [ $? -eq 0 ]
-	then
-	    echo "Job already added to crontab"
-    else
-	    echo "Adding job to crontab..."
-	    add_cronjob
-fi
+lxc-attach --name iot
 
-if [ -e $logFile ]
-then
-	echo "File '$logFile' is already created"
-else
-	echo "Please restart your device pi to start the ZeroConfAPI"
-fi
+/etc/init.d/zeroconf enable
+
+
+echo "Please restart your device to start the ZeroConfAPI"
