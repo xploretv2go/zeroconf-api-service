@@ -11,6 +11,10 @@ Compatible with:
   * Avahi
   * Bonjour
 
+## Documentation
+
+Swagger documentation in YAML format is availible in in the /docs directory full path is `/docs/zeroconf_api.yaml`
+
 ## Installing and running on a development server / localhost
 1. Clone the repository & navigate to directory and run:
 - `sudo git clone https://github.com/xploretv2go/zeroconf.api.service.git`
