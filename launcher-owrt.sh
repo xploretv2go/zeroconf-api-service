@@ -8,6 +8,6 @@ exec 1>/etc/zeroconf.api.service/logs/log.out 2>&1
 
 
 cd "$(dirname "$0")"
-pip3 install -r requirements.txt
-python3 ./run.py &
+pip3 install -r requirements-owrt.txt
+python3 service_discovery/__init__.py runserver
 cd /

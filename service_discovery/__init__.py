@@ -70,9 +70,11 @@ def clear_db(shelf):
 
 
 # Set CORS policy
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/a1/xploretv/v1/zeroconf": {"origins": "*"}})
 
 app.config["CORS_HEADERS"] = "Content-Type"
+logging.getLogger("flask_cors").level = logging.DEBUG
+
 CORS(app)
 
 
@@ -119,7 +121,7 @@ def selfRegister():
     try:
         zeroconf.register_service(service)
     except:
-        print(f"could not register {service}, service has already been registered")
+        print(f"could not register service has already been registered")
 
 
 class CustomServer(Server):
@@ -397,9 +399,7 @@ class ServicesRoute(Resource):
                 zeroconf.register_service(new_service)
                 shelf[(wildcard_name).lower()] = new_service
             except:
-                print(
-                    f"could not register {service}, service has already been registered"
-                )
+                print(f"could not register, service has already been registered")
 
         return {"code": 201, "message": "Service registered", "status": args}, 201
 
