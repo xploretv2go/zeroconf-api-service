@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import re
 from flask import jsonify
 from flask import request
-
+from flask_script import Manager, Server
 
 from zeroconf import (
     IPVersion,
@@ -21,7 +21,6 @@ from zeroconf import (
 )
 
 load_dotenv()
-
 
 # Create an instance of Flask
 app = Flask(__name__)
@@ -64,6 +63,7 @@ def clear_db(shelf):
 # Set CORS policy
 CORS(app, resources={r"/*": {"origins": "*"}})
 app.config["CORS_HEADERS"] = "Content-Type"
+
 CORS(app)
 
 
@@ -82,16 +82,23 @@ class ZeroConf:
 zeroconfGlobal = ZeroConf()
 
 
+class CustomServer(Server):
+    def __call__(self, app, *args, **kwargs):
+        selfRegister()
+        # Hint: Here you could manipulate app
+        return Server.__call__(self, app, *args, **kwargs)
+
+
 class Collector:
     def __init__(self):
         self.infos = []
 
     def on_service_state_change(
-        self,
-        zeroconf: Zeroconf,
-        service_type: str,
-        name: str,
-        state_change: ServiceStateChange,
+            self,
+            zeroconf: Zeroconf,
+            service_type: str,
+            name: str,
+            state_change: ServiceStateChange,
     ) -> None:
         if state_change is ServiceStateChange.Added:
             info = zeroconf.get_service_info(service_type, name)
@@ -186,7 +193,6 @@ with app.app_context():
     types_list = list(types_list_tmp.keys())
     shelf_types.close()
 
-
 collector = Collector()
 services = list(
     ZeroconfServiceTypes.find(
@@ -219,13 +225,11 @@ services.extend(
     ]
 )
 
-
 browser = ServiceBrowser(
     zeroconfGlobal.getZeroconf, services, handlers=[collector.on_service_state_change]
 )
 
 
-@app.before_first_request
 def selfRegister():
     props = {
         "get": "/a1/xploretv/v1/zeroconf",
@@ -233,6 +237,10 @@ def selfRegister():
         "provider": "A1 Telekom Austria",
         "version": "1.0",
     }
+
+    for info in collector.infos:
+        print(str(info))
+
 
     hostname = socket.gethostname()
     local_ip = socket.gethostbyname(hostname)
@@ -250,7 +258,11 @@ def selfRegister():
 
     print(service)
     zeroconf = zeroconfGlobal.getZeroconf
-    zeroconf.register_service(service)
+
+    try:
+        zeroconf.register_service(service)
+    except:
+        print(f"could not register service has already been registered")
 
 
 class ServicesRoute(Resource):
@@ -308,19 +320,19 @@ class ServicesRoute(Resource):
 
         else:
             return {
-                "code": 400,
-                "message": "Type missing",
-                "reason": "Wrong input in the request's body",
-                "status": args,
-            }, 400
+                       "code": 400,
+                       "message": "Type missing",
+                       "reason": "Wrong input in the request's body",
+                       "status": args,
+                   }, 400
 
         if not args.name or "type" not in args.service or "port" not in args.service:
             return {
-                "code": 400,
-                "message": "Bad parameter in request",
-                "reason": "Wrong input in the request's body",
-                "status": args,
-            }, 400
+                       "code": 400,
+                       "message": "Bad parameter in request",
+                       "reason": "Wrong input in the request's body",
+                       "status": args,
+                   }, 400
 
         if "txtRecord" in args.service:
             if args.service["txtRecord"] is None:
@@ -344,11 +356,11 @@ class ServicesRoute(Resource):
         for key in keys:
             if wildcard_name == shelf[key].name:
                 return {
-                    "code": 409,
-                    "message": "Service already registered",
-                    "reason": "service with the same name has already been registered",
-                    "status": args.name,
-                }, 409
+                           "code": 409,
+                           "message": "Service already registered",
+                           "reason": "service with the same name has already been registered",
+                           "status": args.name,
+                       }, 409
 
         hostname = socket.gethostname()
         client_ip = socket.gethostbyname(hostname)
@@ -359,11 +371,11 @@ class ServicesRoute(Resource):
 
         if args.replaceWildcards:
             wildcard_name = (
-                str(args.name).split(".")[0]
-                + " at "
-                + hostname
-                + "."
-                + parsedType
+                    str(args.name).split(".")[0]
+                    + " at "
+                    + hostname
+                    + "."
+                    + parsedType
             )
 
         if args:
@@ -376,11 +388,14 @@ class ServicesRoute(Resource):
                 server=str(hostname + "."),
             )
 
-            print(new_service)
-            zeroconf = zeroconfGlobal.getZeroconf
-            zeroconf.register_service(new_service)
-            shelf[(wildcard_name).lower()] = new_service
-            args.ip = client_ip
+            try:
+                print(new_service)
+                zeroconf = zeroconfGlobal.getZeroconf
+                zeroconf.register_service(new_service)
+                shelf[(wildcard_name).lower()] = new_service
+                args.ip = client_ip
+            except:
+                print(f"could not register, service has already been registered")
 
         return {"code": 201, "message": "Service registered", "status": args}, 201
 
@@ -396,18 +411,18 @@ class ServiceRoute(Resource):
 
         if not matching:
             return {
-                "code": 404,
-                "message": "Device not found",
-                "status": identifier,
-            }, 404
+                       "code": 404,
+                       "message": "Device not found",
+                       "status": identifier,
+                   }, 404
 
         if not (matching[0] in shelf):
             return {"message": "Service not found", "service": {}}, 404
 
         return {
-            "message": "Service found",
-            "status": serviceToOutput(shelf[matching[0]]),
-        }, 200
+                   "message": "Service found",
+                   "status": serviceToOutput(shelf[matching[0]]),
+               }, 200
 
     def delete(self, identifier):
         shelf = get_db()
@@ -420,17 +435,17 @@ class ServiceRoute(Resource):
 
         if not matching:
             return {
-                "code": 404,
-                "message": "Device not found",
-                "status": identifier,
-            }, 404
+                       "code": 404,
+                       "message": "Device not found",
+                       "status": identifier,
+                   }, 404
 
         if not (matching[0] in shelf):
             return {
-                "code": 404,
-                "message": "Device not found",
-                "status": identifier,
-            }, 404
+                       "code": 404,
+                       "message": "Device not found",
+                       "status": identifier,
+                   }, 404
 
         service = shelf[matching[0]]
 
@@ -452,17 +467,17 @@ class ServiceRoute(Resource):
 
         if not matching:
             return {
-                "code": 404,
-                "message": "Device not found",
-                "status": identifier,
-            }, 404
+                       "code": 404,
+                       "message": "Device not found",
+                       "status": identifier,
+                   }, 404
 
         if not (matching[0] in shelf):
             return {
-                "code": 404,
-                "message": "Device not found",
-                "status": identifier,
-            }, 404
+                       "code": 404,
+                       "message": "Device not found",
+                       "status": identifier,
+                   }, 404
 
         service = shelf[matching[0]]
 
@@ -514,3 +529,16 @@ def internal_server_error(error):
 
 api.add_resource(ServicesRoute, "/a1/xploretv/v1/zeroconf")
 api.add_resource(ServiceRoute, "/a1/xploretv/v1/zeroconf/<string:identifier>")
+
+manager = Manager(app)
+
+
+@manager.command
+def runserver():
+    selfRegister()
+    #app.run(host=os.getenv("HOST"), port=os.getenv("PORT"), debug=os.getenv("DEBUG"))
+    app.run(host=os.getenv("HOST"), port=os.getenv("PORT"), debug=False)
+
+
+if __name__ == "__main__":
+    manager.run()
