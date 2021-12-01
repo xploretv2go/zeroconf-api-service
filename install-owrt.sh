@@ -11,27 +11,31 @@ parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 launcher="${parent_path}/launcher-owrt.sh"
 
 
-echo "Modifying /etc/hosts file"
+echo "Modifying hostname file"
 
-
-if [[ $(sed -n '/^127.0.0.1/p' /etc/hosts) == *"localzeroconf"* ]]; then
-	echo "IPv4 Host already modified"
+if grep -q "localzeroconf" /etc/config/dhcp; then
+	echo "Hostname already modified" 
 else
-	sed -i '/^127.0.0.1/ s/$/ localzeroconf/' /etc/hosts
-	echo "IPv4 Host successfully modified"
+	echo -e "\nconfig domain\n\toption name 'localzeroconf'\n\toption ip '192.168.192.2'" >> /etc/config/dhcp
+	/etc/init.d/dnsmasq restart
+	
+	echo "DHCP successfully modified"
 fi
 
 
-if [[ $(sed -n '/^::1/p' /etc/hosts) == *"ip6-localzeroconf"* ]]; then
-	echo "IPv6 Host already modified"
+if grep -q "lxc.uts.name = iot" /srv/lxc/iot/config; then
+	echo "Hostname already modified"
 else
-	sed -i '/^::1/ s/$/ localzeroconf/' /etc/hosts
-	echo "IPv6 Host successfully modified"
+	sed -i -e 's/lxc.uts.name = iot/lxc.uts.name = localzeroconf/g' /srv/lxc/iot/config
+	lxc-stop --name iot
+	lxc-start --name iot
+	
+	echo "DHCP successfully modified"
 fi
 
-echo "Localzeroconf alias set!"
+echo "localzeroconf alias set!"
 
-cp /etc/zeroconf.api.service/zeroconf /overlay/lxc/iot/rootfs/etc/init.d 
+cp /etc/zeroconf.api.service/zeroconf /overlay/lxc/iot/rootfs/etc/init.d
 
 lxc-attach --name iot
 
