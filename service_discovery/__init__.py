@@ -98,7 +98,10 @@ class Collector:
             state_change: ServiceStateChange,
     ) -> None:
         if state_change is ServiceStateChange.Added:
-            info = zeroconf.get_service_info(service_type, name)
+            try:
+                info = zeroconf.get_service_info(service_type, name)
+            except BadTypeInNameException:
+                return
             if info not in self.infos:
                 self.infos.append(info)
         if state_change is ServiceStateChange.Removed:
