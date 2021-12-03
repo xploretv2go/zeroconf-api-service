@@ -9,16 +9,22 @@ from dotenv import load_dotenv
 import re
 from flask import jsonify
 from flask import request
-from flask_script import Manager, Server
+import threading
+from typing import List
+import asyncio
+from time import sleep
+
+from werkzeug.serving import make_server
 
 from zeroconf import (
     IPVersion,
     ServiceBrowser,
-    ServiceInfo,
     Zeroconf,
+    ServiceInfo,
     ServiceStateChange,
     ZeroconfServiceTypes,
 )
+
 
 load_dotenv()
 
@@ -26,7 +32,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Create the API
-api = Api(app)
+# api = Api(app)
 
 types_list = []
 
@@ -66,7 +72,6 @@ app.config["CORS_HEADERS"] = "Content-Type"
 
 CORS(app)
 
-
 class ZeroConf:
     def __init__(self):
         self.zeroconf = Zeroconf(ip_version=IPVersion.V4Only)
@@ -80,14 +85,6 @@ class ZeroConf:
 # this way they can all be initized during the startup
 # instantiate global zeroconf object
 zeroconfGlobal = ZeroConf()
-
-
-class CustomServer(Server):
-    def __call__(self, app, *args, **kwargs):
-        selfRegister()
-        # Hint: Here you could manipulate app
-        return Server.__call__(self, app, *args, **kwargs)
-
 
 class Collector:
     def __init__(self):
@@ -369,6 +366,8 @@ class ServicesRoute(Resource):
             hostname = socket.gethostbyaddr(args.service["ip"])[0]
             client_ip = args.service["ip"]
 
+        hostname = hostname.split(".")[0]
+
         if args.replaceWildcards:
             wildcard_name = (
                     str(args.name).split(".")[0]
@@ -527,18 +526,49 @@ def internal_server_error(error):
 #  Routes
 #####################
 
-api.add_resource(ServicesRoute, "/a1/xploretv/v1/zeroconf")
-api.add_resource(ServiceRoute, "/a1/xploretv/v1/zeroconf/<string:identifier>")
+class ServerThread(threading.Thread):
 
-manager = Manager(app)
+    def __init__(self, app):
+        threading.Thread.__init__(self)
+        self.server = make_server(os.getenv("HOST"), os.getenv("PORT"), app)
+        self.ctx = app.app_context()
+        self.ctx.push()
 
+    def run(self):
+        print('Starting server')
+        self.server.serve_forever()
 
-@manager.command
-def runserver():
-    selfRegister()
-    #app.run(host=os.getenv("HOST"), port=os.getenv("PORT"), debug=os.getenv("DEBUG"))
-    app.run(host=os.getenv("HOST"), port=os.getenv("PORT"), debug=False)
+    def shutdown(self):
+        self.server.shutdown()
 
+def start_server():
+    global server
+    global app
+    api = Api(app)
+    api.add_resource(ServicesRoute, "/a1/xploretv/v1/zeroconf")
+    api.add_resource(ServiceRoute, "/a1/xploretv/v1/zeroconf/<string:identifier>")
+    server = ServerThread(app)
+    server.start()
+    print('Server started')
+
+def stop_server():
+    global server
+    server.shutdown()
 
 if __name__ == "__main__":
-    manager.run()
+    with app.app_context():
+        selfRegister()
+
+    start_server()
+
+    try:
+        while True:
+            sleep(0.1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        print("Unregistering...")
+        with app.app_context():
+            for s in get_db().values():
+                zeroconfGlobal.getZeroconf.unregister_service(s)
+        stop_server()

@@ -24,18 +24,18 @@ fi
 echo "Modifying /etc/hosts file"
 
 
-if [[ $(sed -n '/^127.0.0.1/p' /etc/hosts) == *"localzeroconf"* ]]; then
+if [[ $(sed -n '/^127.0.0.1/p' /etc/hosts) == *"zeroconf"* ]]; then
 	echo "IPv4 Host already modified"
 else
-	sed -i '/^127.0.0.1/ s/$/ localzeroconf/' /etc/hosts
+	sed -i '/^127.0.0.1/ s/$/ zeroconf/' /etc/hosts
 	echo "IPv4 Host successfully modified"
 fi
 
 
-if [[ $(sed -n '/^::1/p' /etc/hosts) == *"ip6-localzeroconf"* ]]; then
+if [[ $(sed -n '/^::1/p' /etc/hosts) == *"ip6-zeroconf"* ]]; then
 	echo "IPv6 Host already modified"
 else
-	sed -i '/^::1/ s/$/ ip6-localzeroconf/' /etc/hosts
+	sed -i '/^::1/ s/$/ ip6-zeroconf/' /etc/hosts
 	echo "IPv6 Host successfully modified"
 fi
 
