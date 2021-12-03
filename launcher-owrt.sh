@@ -8,4 +8,4 @@
 
 cd "$(dirname "$0")"
 pip3 install -r requirements-owrt.txt
-python3 /etc/zeroconf.api.service/service_discovery/__init__.py runserver
+python3 /etc/zeroconf.api.service/service_discovery/__init__.py &
