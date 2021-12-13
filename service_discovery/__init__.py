@@ -13,6 +13,9 @@ import threading
 from typing import List
 import asyncio
 from time import sleep
+import atexit
+import sys
+import signal
 
 from werkzeug.serving import make_server
 
@@ -242,11 +245,11 @@ def selfRegister():
     hostname = socket.gethostname()
     local_ip = socket.gethostbyname(hostname)
 
+    wildcard = "ZeroConf Service Discovery API at " + hostname + "._http._tcp.local."
+
     service = ServiceInfo(
         "_http._tcp.local.",
-        "ZeroConf Service Discovery API at "
-        + hostname
-        + "._http._tcp.local.",
+        wildcard,
         addresses=[socket.inet_aton(local_ip)],
         port=int(os.getenv("PORT")),
         properties=props,
@@ -255,9 +258,11 @@ def selfRegister():
 
     print(service)
     zeroconf = zeroconfGlobal.getZeroconf
+    shelf = get_db()
 
     try:
         zeroconf.register_service(service)
+        shelf[wildcard.lower()] = service
     except:
         print(f"could not register service has already been registered")
 
@@ -359,8 +364,9 @@ class ServicesRoute(Resource):
                            "status": args.name,
                        }, 409
 
-        hostname = socket.gethostname()
-        client_ip = socket.gethostbyname(hostname)
+        client_ip = request.environ['REMOTE_ADDR']
+        hostname = socket.gethostbyaddr(client_ip)[0]
+
 
         if "ip" in args.service:
             hostname = socket.gethostbyaddr(args.service["ip"])[0]
@@ -555,7 +561,20 @@ def stop_server():
     global server
     server.shutdown()
 
+def sigterm_handler(_signo, _stack_frame):
+    sys.exit(0)
+
+def test():
+    sys.exit(0)
+
 if __name__ == "__main__":
+
+    atexit.register(test)
+    signal.signal(signal.SIGTERM, sigterm_handler)
+    signal.signal(signal.SIGINT, sigterm_handler)
+    signal.signal(signal.SIGPWR, sigterm_handler)
+    signal.signal(signal.SIGUSR1, sigterm_handler)
+
     with app.app_context():
         selfRegister()
 
@@ -566,9 +585,12 @@ if __name__ == "__main__":
             sleep(0.1)
     except KeyboardInterrupt:
         pass
+    except SystemExit:
+        pass
     finally:
         print("Unregistering...")
         with app.app_context():
             for s in get_db().values():
                 zeroconfGlobal.getZeroconf.unregister_service(s)
         stop_server()
+        print('Finalized')
