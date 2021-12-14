@@ -253,7 +253,7 @@ def selfRegister():
         addresses=[socket.inet_aton(local_ip)],
         port=int(os.getenv("PORT")),
         properties=props,
-        server=str(hostname + "."),
+        server=str(hostname + ".local."),
     )
 
     print(service)
@@ -390,7 +390,7 @@ class ServicesRoute(Resource):
                 addresses=[socket.inet_aton(client_ip)],
                 port=args.service["port"],
                 properties=args.service["txtRecord"],
-                server=str(hostname + "."),
+                server=str(hostname + ".local."),
             )
 
             try:
