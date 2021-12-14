@@ -19,14 +19,16 @@ case $ANSWER in
 		#sed -i -e 's/lxc.uts.name = localzeroconf/lxc.uts.name = iot/g' /srv/lxc/iot/config
 		sed -i -e "s/lxc.uts.name = zeroconf/lxc.uts.name = ${container}/g" "/srv/lxc/${container}/config"
 
-        echo "Removing zeroconf file from /overlay/lxc/iot/rootfs/etc/init.d/"
-        rm -rf /overlay/lxc/iot/rootfs/etc/init.d/zeroconf
+        echo "Removing zeroconf file"
+        
+        /etc/init.d/zeroconf stop
+        rm -rf "/overlay/lxc/${container}/rootfs/etc/init.d/zeroconf"
 
 		echo "Removing all files and folders"
 		rm -R $parent_path  2>&1 > /dev/null
 
-		lxc-stop --name "${container}"
-		lxc-start --name "${container}"
+		lxc-stop -n "${container}"
+		lxc-start -n "${container}"
 
 		echo "Uninstallation completed!";;
 	N|n)

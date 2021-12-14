@@ -27,20 +27,28 @@ echo "Modifying hostname file"
 if grep -q "lxc.uts.name = zeroconf" "/srv/lxc/${container}/config"; then
 	echo "Hostname already modified"
 else
-	sed -i -e "s/lxc.uts.name = ${container}/lxc.uts.name = zeroconf/g" "/srv/lxc/${container}/config"
-	lxc-stop --name "${container}"
-	lxc-start --name "${container}"
-	
-	echo "DHCP successfully modified"
+	sed -i -e "s/lxc.uts.name = ${container}/lxc.uts.name = zeroconf/g" "/srv/lxc/${container}/config"	
 fi
 
 echo "zeroconf alias set!"
 
-cp "/etc/zeroconf.api.service/zeroconf" "/overlay/lxc/${container}/rootfs/etc/init.d"
+touch "${parent_path}/zeroconf"
 
-lxc-attach --name "${container}"
+echo "Stopping container"
+lxc-stop -n "${container}"
 
-/etc/init.d/zeroconf enable
+printf '#!/bin/sh /etc/rc.common\n\nUSE_PROCD=1\nSTART=95\nSTOP=01\nstart_service() {\n\tprocd_open_instance\n\tprocd_set_param command /bin/sh %s/launcher-owrt.sh\n\tprocd_set_param stdout 1\n\tprocd_set_param stderr 1\n\tprocd_close_instance\n}' "${parent_path}" > "${parent_path}/zeroconf"
 
+cp "${parent_path}/zeroconf" "/overlay/lxc/${container}/rootfs/etc/init.d"
+chmod 755 "/overlay/lxc/${container}/rootfs/etc/init.d/zeroconf"
 
-echo "Please restart your device to start the ZeroConfAPI"
+touch "${parent_path}/launcher-owrt.sh"
+
+printf '#!/bin/sh\npip3 install -r %s/requirements-owrt.txt\npython3 %s/service_discovery/__init__.py' "${parent_path}" "${parent_path}" > "${parent_path}/launcher-owrt.sh"
+chmod 755 "${parent_path}/launcher-owrt.sh"
+
+echo "Starting container"
+lxc-start -n "${container}"
+lxc-attach -n "${container}" -- /etc/init.d/zeroconf enable
+
+echo "Finished"

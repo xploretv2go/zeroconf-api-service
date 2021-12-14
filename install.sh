@@ -41,6 +41,16 @@ fi
 
 echo "Localzeroconf alias set!"
 
+if [ -e $launcher ]
+then
+	echo "Launcher already exists"
+else
+	touch "${launcher}"
+	printf '#!/bin/sh\n\nsudo pip3 install -r %s/requirements.txt\nsudo python3 %s/service_discovery/__init__.py' "${parent_path}" "${parent_path}" > "${launcher}"
+	chmod 755 "${launcher}"
+	echo "Launcher created"
+fi
+
 #Adding Zeroconf API to crontab
 add_cronjob () { 
     echo "Adding Zeroconf API as a cronjob"

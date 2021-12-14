@@ -31,8 +31,8 @@ case $ANSWER in
 		echo "Proceeding with uninstallation ..."
 		sleep 1
 		remove_cronjob
-		sed -i 's/ localzeroconf//' /etc/hosts
-		sed -i 's/ ip6-localzeroconf//' /etc/hosts
+		sed -i 's/ zeroconf//' /etc/hosts
+		sed -i 's/ ip6-zeroconf//' /etc/hosts
 
 		echo "Removing all files and folders"
 		rm -R $parent_path  2>&1 > /dev/null
