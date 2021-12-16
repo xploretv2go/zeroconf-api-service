@@ -70,10 +70,11 @@ def clear_db(shelf):
 
 
 # Set CORS policy
-CORS(app, resources={r"/*": {"origins": "*"}})
 app.config["CORS_HEADERS"] = "Content-Type"
 
-CORS(app)
+CORS(app, resources={r"/a1/xploretv/v1/zeroconf": {"origins": "*",
+     "allow_headers": "*", "expose_headers": "*"}})
+
 
 class ZeroConf:
     def __init__(self):
@@ -88,6 +89,7 @@ class ZeroConf:
 # this way they can all be initized during the startup
 # instantiate global zeroconf object
 zeroconfGlobal = ZeroConf()
+
 
 class Collector:
     def __init__(self):
@@ -226,7 +228,8 @@ services.extend(
 )
 
 browser = ServiceBrowser(
-    zeroconfGlobal.getZeroconf, services, handlers=[collector.on_service_state_change]
+    zeroconfGlobal.getZeroconf, services, handlers=[
+        collector.on_service_state_change]
 )
 
 
@@ -240,7 +243,6 @@ def selfRegister():
 
     for info in collector.infos:
         print(str(info))
-
 
     hostname = socket.gethostname()
     local_ip = socket.gethostbyname(hostname)
@@ -295,8 +297,10 @@ class ServicesRoute(Resource):
         parser.add_argument("ip", required=False, type=str)
 
         nested_service = reqparse.RequestParser()
-        nested_service.add_argument("type", required=True, type=str, location="json")
-        nested_service.add_argument("port", required=True, type=int, location="json")
+        nested_service.add_argument(
+            "type", required=True, type=str, location="json")
+        nested_service.add_argument(
+            "port", required=True, type=int, location="json")
         nested_service.add_argument(
             "subtype", required=False, type=str, location="json"
         )
@@ -322,19 +326,19 @@ class ServicesRoute(Resource):
 
         else:
             return {
-                       "code": 400,
-                       "message": "Type missing",
-                       "reason": "Wrong input in the request's body",
-                       "status": args,
-                   }, 400
+                "code": 400,
+                "message": "Type missing",
+                "reason": "Wrong input in the request's body",
+                "status": args,
+            }, 400
 
         if not args.name or "type" not in args.service or "port" not in args.service:
             return {
-                       "code": 400,
-                       "message": "Bad parameter in request",
-                       "reason": "Wrong input in the request's body",
-                       "status": args,
-                   }, 400
+                "code": 400,
+                "message": "Bad parameter in request",
+                "reason": "Wrong input in the request's body",
+                "status": args,
+            }, 400
 
         if "txtRecord" in args.service:
             if args.service["txtRecord"] is None:
@@ -358,15 +362,14 @@ class ServicesRoute(Resource):
         for key in keys:
             if wildcard_name == shelf[key].name:
                 return {
-                           "code": 409,
-                           "message": "Service already registered",
-                           "reason": "service with the same name has already been registered",
-                           "status": args.name,
-                       }, 409
+                    "code": 409,
+                    "message": "Service already registered",
+                    "reason": "service with the same name has already been registered",
+                    "status": args.name,
+                }, 409
 
         client_ip = request.environ['REMOTE_ADDR']
         hostname = socket.gethostbyaddr(client_ip)[0]
-
 
         if "ip" in args.service:
             hostname = socket.gethostbyaddr(args.service["ip"])[0]
@@ -376,11 +379,11 @@ class ServicesRoute(Resource):
 
         if args.replaceWildcards:
             wildcard_name = (
-                    str(args.name).split(".")[0]
-                    + " at "
-                    + hostname
-                    + "."
-                    + parsedType
+                str(args.name).split(".")[0]
+                + " at "
+                + hostname
+                + "."
+                + parsedType
             )
 
         if args:
@@ -416,18 +419,18 @@ class ServiceRoute(Resource):
 
         if not matching:
             return {
-                       "code": 404,
-                       "message": "Device not found",
-                       "status": identifier,
-                   }, 404
+                "code": 404,
+                "message": "Device not found",
+                "status": identifier,
+            }, 404
 
         if not (matching[0] in shelf):
             return {"message": "Service not found", "service": {}}, 404
 
         return {
-                   "message": "Service found",
-                   "status": serviceToOutput(shelf[matching[0]]),
-               }, 200
+            "message": "Service found",
+            "status": serviceToOutput(shelf[matching[0]]),
+        }, 200
 
     def delete(self, identifier):
         shelf = get_db()
@@ -440,17 +443,17 @@ class ServiceRoute(Resource):
 
         if not matching:
             return {
-                       "code": 404,
-                       "message": "Device not found",
-                       "status": identifier,
-                   }, 404
+                "code": 404,
+                "message": "Device not found",
+                "status": identifier,
+            }, 404
 
         if not (matching[0] in shelf):
             return {
-                       "code": 404,
-                       "message": "Device not found",
-                       "status": identifier,
-                   }, 404
+                "code": 404,
+                "message": "Device not found",
+                "status": identifier,
+            }, 404
 
         service = shelf[matching[0]]
 
@@ -472,17 +475,17 @@ class ServiceRoute(Resource):
 
         if not matching:
             return {
-                       "code": 404,
-                       "message": "Device not found",
-                       "status": identifier,
-                   }, 404
+                "code": 404,
+                "message": "Device not found",
+                "status": identifier,
+            }, 404
 
         if not (matching[0] in shelf):
             return {
-                       "code": 404,
-                       "message": "Device not found",
-                       "status": identifier,
-                   }, 404
+                "code": 404,
+                "message": "Device not found",
+                "status": identifier,
+            }, 404
 
         service = shelf[matching[0]]
 
@@ -547,25 +550,31 @@ class ServerThread(threading.Thread):
     def shutdown(self):
         self.server.shutdown()
 
+
 def start_server():
     global server
     global app
     api = Api(app)
     api.add_resource(ServicesRoute, "/a1/xploretv/v1/zeroconf")
-    api.add_resource(ServiceRoute, "/a1/xploretv/v1/zeroconf/<string:identifier>")
+    api.add_resource(
+        ServiceRoute, "/a1/xploretv/v1/zeroconf/<string:identifier>")
     server = ServerThread(app)
     server.start()
     print('Server started')
+
 
 def stop_server():
     global server
     server.shutdown()
 
+
 def sigterm_handler(_signo, _stack_frame):
     sys.exit(0)
 
+
 def test():
     sys.exit(0)
+
 
 if __name__ == "__main__":
 
