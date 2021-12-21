@@ -11,6 +11,10 @@ parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 launcher="${parent_path}/launcher-owrt.sh"
 container=$(echo $(lxc-ls) | cut -d \t -f 1)
 
+echo "Installing python"
+opkg update
+opkg install python3
+opkg install python3-pip
 
 echo "Modifying hostname file"
 
@@ -37,9 +41,9 @@ touch "${parent_path}/zeroconf"
 echo "Stopping container"
 lxc-stop -n "${container}"
 
-printf '#!/bin/sh /etc/rc.common\n\nUSE_PROCD=1\nSTART=95\nSTOP=01\nstart_service() {\n\tprocd_open_instance\n\tprocd_set_param command /bin/sh %s/launcher-owrt.sh\n\tprocd_set_param stdout 1\n\tprocd_set_param stderr 1\n\tprocd_close_instance\n}' "${parent_path}" > "${parent_path}/zeroconf"
+printf '#!/bin/sh /etc/rc.common\n\nUSE_PROCD=1\nSTART=95\nSTOP=01\nstart_service() {\n\tprocd_open_instance\n\tprocd_set_param command /bin/sh %s/launcher-owrt.sh\n\tprocd_set_param stdout 1\n\tprocd_set_param stderr 1\n\tprocd_close_instance\n}\n\nstop_service() {\n\tkillall python3\n}' "${parent_path}" > "${parent_path}/zeroconf"
 
-cp "${parent_path}/zeroconf" "/overlay/lxc/${container}/rootfs/etc/init.d"
+mv "${parent_path}/zeroconf" "/overlay/lxc/${container}/rootfs/etc/init.d"
 chmod 755 "/overlay/lxc/${container}/rootfs/etc/init.d/zeroconf"
 
 touch "${parent_path}/launcher-owrt.sh"
