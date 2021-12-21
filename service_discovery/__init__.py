@@ -371,6 +371,9 @@ class ServicesRoute(Resource):
         client_ip = request.environ['REMOTE_ADDR']
         hostname = socket.gethostbyaddr(client_ip)[0]
 
+        if hostname == "localhost"
+            hostname = socket.gethostbyaddr(client_ip)[1][0]
+
         if "ip" in args.service:
             hostname = socket.gethostbyaddr(args.service["ip"])[0]
             client_ip = args.service["ip"]
