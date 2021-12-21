@@ -74,5 +74,7 @@ if [ -e $logFile ]
 then
 	echo "File '$logFile' is already created"
 else
-	echo "Please restart your device pi to start the ZeroConfAPI"
+	echo "Starting service"
+	sh ${launcher} > $logFile 2>&1 &
+	echo "Done."
 fi
