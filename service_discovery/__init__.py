@@ -443,29 +443,28 @@ class ServiceRoute(Resource):
         identifier = identifier.lower()
         zeroconf = zeroconfGlobal.getZeroconf
 
+        client_ip = request.environ['REMOTE_ADDR']
+        hostname = socket.gethostbyaddr(client_ip)[0]
+
+        if hostname == "localhost":
+            hostname = socket.gethostname()
+
         matching = [s for s in keys if identifier in s]
 
-        if not matching:
-            return {
-                "code": 404,
-                "message": "Device not found",
-                "status": identifier,
-            }, 404
+        for m in matching:
+            if hostname.split('.')[0] in m:
+                service = shelf[m]
+                zeroconf.unregister_service(service)
+                collector.infos.remove(service)
+                del shelf[m]
+                return "", 204
 
-        if not (matching[0] in shelf):
-            return {
-                "code": 404,
-                "message": "Device not found",
-                "status": identifier,
-            }, 404
+        return {
+            "code": 404,
+            "message": "Device not found",
+            "status": identifier,
+        }, 404
 
-        service = shelf[matching[0]]
-
-        zeroconf.unregister_service(service)
-        collector.infos.remove(service)
-        del shelf[matching[0]]
-
-        return "", 204
 
     # delete method through post request in case of beacon usage
     def post(self, identifier):
@@ -475,29 +474,27 @@ class ServiceRoute(Resource):
         identifier = identifier.lower()
         zeroconf = zeroconfGlobal.getZeroconf
 
+        client_ip = request.environ['REMOTE_ADDR']
+        hostname = socket.gethostbyaddr(client_ip)[0]
+
+        if hostname == "localhost":
+            hostname = socket.gethostname()
+
         matching = [s for s in keys if identifier in s]
 
-        if not matching:
-            return {
-                "code": 404,
-                "message": "Device not found",
-                "status": identifier,
-            }, 404
+        for m in matching:
+            if hostname.split('.')[0] in m:
+                service = shelf[m]
+                zeroconf.unregister_service(service)
+                collector.infos.remove(service)
+                del shelf[m]
+                return "", 204
 
-        if not (matching[0] in shelf):
-            return {
-                "code": 404,
-                "message": "Device not found",
-                "status": identifier,
-            }, 404
-
-        service = shelf[matching[0]]
-
-        zeroconf.unregister_service(service)
-        collector.infos.remove(service)
-        del shelf[matching[0]]
-
-        return "", 204
+        return {
+            "code": 404,
+            "message": "Device not found",
+            "status": identifier,
+        }, 404
 
 
 #####################

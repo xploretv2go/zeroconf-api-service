@@ -37,7 +37,7 @@ info:
     **Use case #1:** To access the API from closed Brower's JS Engines, it must run on the same device (e.g. STB) and conform to the following convention:
       
       ```
-      http(s)://localhost/a1/xploretv/v1/zeroconf
+      http(s)://zeroconf/a1/xploretv/v1/zeroconf
       ```
     **Use case #2:** To access the API from applications or services running on other devices in the same local network, the API must be announced according to Zeroconf:
     
