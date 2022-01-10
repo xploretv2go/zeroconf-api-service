@@ -39,6 +39,20 @@ app = Flask(__name__)
 
 types_list = []
 
+# Returns local I{}
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(0)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
 
 # Initialize shelf DB
 def get_db():
@@ -245,7 +259,7 @@ def selfRegister():
         print(str(info))
 
     hostname = socket.gethostname()
-    local_ip = socket.gethostbyname(hostname)
+    local_ip = get_ip()
 
     wildcard = "ZeroConf Service Discovery API at " + hostname + "._http._tcp.local."
 
@@ -373,7 +387,7 @@ class ServicesRoute(Resource):
 
         if hostname == "localhost":
             hostname = socket.gethostname()
-            client_ip = socket.gethostbyname(hostname)
+            client_ip = get_ip()
 
         if "ip" in args.service:
             hostname = socket.gethostbyaddr(args.service["ip"])[0]
@@ -404,7 +418,7 @@ class ServicesRoute(Resource):
                 print(new_service)
                 zeroconf = zeroconfGlobal.getZeroconf
                 zeroconf.register_service(new_service)
-                shelf[(wildcard_name).lower()] = new_service
+                #shelf[(wildcard_name).lower()] = new_service
                 args.ip = client_ip
             except:
                 print(f"could not register, service has already been registered")
