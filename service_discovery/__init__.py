@@ -373,7 +373,7 @@ class ServicesRoute(Resource):
 
         if hostname == "localhost":
             hostname = socket.gethostname()
-            local_ip = socket.gethostbyname(hostname)
+            client_ip = socket.gethostbyname(hostname)
 
         if "ip" in args.service:
             hostname = socket.gethostbyaddr(args.service["ip"])[0]
