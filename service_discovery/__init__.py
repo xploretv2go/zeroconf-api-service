@@ -418,7 +418,7 @@ class ServicesRoute(Resource):
                 print(new_service)
                 zeroconf = zeroconfGlobal.getZeroconf
                 zeroconf.register_service(new_service)
-                #shelf[(wildcard_name).lower()] = new_service
+                shelf[(wildcard_name).lower()] = new_service
                 args.ip = client_ip
             except:
                 print(f"could not register, service has already been registered")
@@ -466,7 +466,7 @@ class ServiceRoute(Resource):
         matching = [s for s in keys if identifier in s]
 
         for m in matching:
-            if hostname.split('.')[0] in m:
+            if hostname.split('.')[0].lower() in m:
                 service = shelf[m]
                 zeroconf.unregister_service(service)
                 collector.infos.remove(service)
@@ -497,7 +497,7 @@ class ServiceRoute(Resource):
         matching = [s for s in keys if identifier in s]
 
         for m in matching:
-            if hostname.split('.')[0] in m:
+            if hostname.split('.')[0].lower() in m:
                 service = shelf[m]
                 zeroconf.unregister_service(service)
                 collector.infos.remove(service)
