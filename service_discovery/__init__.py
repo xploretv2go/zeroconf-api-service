@@ -58,6 +58,14 @@ def get_ip():
 def get_db():
     db = getattr(g, "_database", None)
     if db is None:
+        db = g._database = shelve.open("discovered")
+    return db
+
+
+# Initialize shelf Services
+def get_service_db():
+    db = getattr(g, "_database", None)
+    if db is None:
         db = g._database = shelve.open("services")
     return db
 
@@ -274,7 +282,7 @@ def selfRegister():
 
     print(service)
     zeroconf = zeroconfGlobal.getZeroconf
-    shelf = get_db()
+    shelf = get_service_db()
 
     try:
         zeroconf.register_service(service)
@@ -300,7 +308,7 @@ class ServicesRoute(Resource):
 
     def post(self):
         parser = reqparse.RequestParser()
-        shelf = get_db()
+        shelf = get_service_db()
 
         keys = list(shelf.keys())
 
@@ -451,7 +459,7 @@ class ServiceRoute(Resource):
         }, 200
 
     def delete(self, identifier):
-        shelf = get_db()
+        shelf = get_service_db()
         keys = list(shelf.keys())
 
         identifier = identifier.lower()
@@ -482,7 +490,7 @@ class ServiceRoute(Resource):
 
     # delete method through post request in case of beacon usage
     def post(self, identifier):
-        shelf = get_db()
+        shelf = get_service_db()
         keys = list(shelf.keys())
 
         identifier = identifier.lower()
