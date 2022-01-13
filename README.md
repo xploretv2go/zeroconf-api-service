@@ -17,10 +17,10 @@ Swagger documentation in YAML format is availible in in the /docs directory full
 
 ## Installing and running on a development server / localhost
 1. Clone the repository & navigate to directory and run:
-- `sudo git clone https://github.com/xploretv2go/zeroconf.api.service.git`
+- `git clone https://github.com/xploretv2go/zeroconf-api-service-git`
 - In case pip3 is not installed with python3 on the system run `sudo apt-get install python3-pip`
-- `sudo pip3 install -r requirements.txt`
-- `sudo python3 run.py`
+- `pip3 install -r requirements.txt`
+- `python3 run.py`
 1. You're done!
 
 ## Deploying on a Rpi
@@ -29,7 +29,7 @@ To deploy the Zeroconf service/API on a device such as Rpi. Make sure you have [
 1. Make sure you have git version control installed. if not run:
    - `sudo apt-get install git` 
 2. Navigate to you home directory where you wish to install the API service and type the command:
-   - `sudo git clone https://github.com/xploretv2go/zeroconf.api.service.git`
+   - `git clone https://github.com/xploretv2go/zeroconf-api-service.git`
 3. Run installation script as a root to install the API on to your device:
    - `sudo bash install.sh` or `sudo sh install.sh`
 4. Restart the Rpi using the command 
@@ -79,7 +79,7 @@ Note: you can configure the `port`, `hostname` and set`DEBUG` level in the `.env
 ## Installing and running on OpenWRT system
 1. make sure to update the packages first by running `opkg update`
 2. Install git-http package `opkg install git-http` and `opkg install ca-bundle`
-3. Clone this repo `git clone https://github.com/xploretv2go/zeroconf.api.service.git` in `/etc` folder
+3. Clone this repo `git clone https://github.com/xploretv2go/zeroconf-api-service.git` in `/etc` folder
 4. Install python3 interpreter along with pip by running `opkg install python3` and `opkg install python3-pip`
 5. After installing python3 and pip run following command to update pip `pip3 install --upgrade pip`
 6. Run `sh install-owrt.sh` to install all the dependencies and set the crontab to start the API
