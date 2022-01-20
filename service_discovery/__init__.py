@@ -257,7 +257,7 @@ browser = ServiceBrowser(
 
 def selfRegister():
     props = {
-        "get": "/a1/xploretv/v1/zeroconf",
+        "path": "/a1/xploretv/v1/zeroconf",
         "product": "ZeroConf API-Service",
         "provider": "A1 Telekom Austria",
         "version": "1.0",
@@ -622,7 +622,7 @@ if __name__ == "__main__":
     finally:
         print("Unregistering...")
         with app.app_context():
-            for s in get_db().values():
+            for s in get_service_db().values():
                 zeroconfGlobal.getZeroconf.unregister_service(s)
         stop_server()
         print('Finalized')
