@@ -40,7 +40,8 @@ case $ANSWER in
 		sed -i 's/ ip6-zeroconf//' /etc/hosts
 
 		echo "Removing all files and folders"
-		rm -rf "${parent_path}/../.."
+		cd ../..
+		rm -rf "$(pwd)"
 		echo "Uninstallation completed!";;
 	N|n)
 		echo "Uninstallation aborted!"
