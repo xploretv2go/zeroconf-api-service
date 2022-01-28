@@ -41,7 +41,7 @@ chmod 755 "/etc/init.d/zeroconf"
 
 touch "${parent_path}/launcher-owrt.sh"
 
-printf '#!/bin/sh\npip3 install -r %s/requirements-owrt.txt\npython3 %s/service_discovery/__init__.py' "${parent_path}" "${parent_path}" > "${parent_path}/launcher-owrt.sh"
+printf '#!/bin/sh\npip3 install -r %s/../../requirements-owrt.txt\npython3 %s/../../service_discovery/__init__.py' "${parent_path}" "${parent_path}" > "${parent_path}/launcher-owrt.sh"
 chmod 755 "${parent_path}/launcher-owrt.sh"
 
 /etc/init.d/zeroconf enable
