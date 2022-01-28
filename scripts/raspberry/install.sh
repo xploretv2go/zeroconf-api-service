@@ -46,7 +46,7 @@ then
 	echo "Launcher already exists"
 else
 	touch "${launcher}"
-	printf '#!/bin/sh\n\nsudo pip3 install -r %s/requirements.txt\nsudo python3 %s/service_discovery/__init__.py' "${parent_path}" "${parent_path}" > "${launcher}"
+	printf '#!/bin/sh\n\nsudo pip3 install -r %s/../../requirements.txt\nsudo python3 %s/../../service_discovery/__init__.py' "${parent_path}" "${parent_path}" > "${launcher}"
 	chmod 755 "${launcher}"
 	echo "Launcher created"
 fi

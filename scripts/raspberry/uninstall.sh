@@ -1,6 +1,11 @@
 #!/bin/bash
 #uninstall.sh
 
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 
+   exit 1
+fi
+
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 launcher="${parent_path}/launcher.sh"
 logFile="${parent_path}/logs/cronlog"
@@ -35,7 +40,7 @@ case $ANSWER in
 		sed -i 's/ ip6-zeroconf//' /etc/hosts
 
 		echo "Removing all files and folders"
-		rm -R $parent_path  2>&1 > /dev/null
+		rm -rf "${parent_path}/../.."
 		echo "Uninstallation completed!";;
 	N|n)
 		echo "Uninstallation aborted!"
