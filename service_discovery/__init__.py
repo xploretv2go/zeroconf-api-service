@@ -5,6 +5,7 @@ import shelve
 import os
 from flask_cors import CORS
 import logging
+import ssl
 from dotenv import load_dotenv
 import re
 from flask import jsonify
@@ -91,11 +92,23 @@ def clear_db(shelf):
         del shelf[key]
 
 
-# Set CORS policy
-app.config["CORS_HEADERS"] = "Content-Type"
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Origin', 'https://tv.gustostops.com')
+    response.headers.add('Access-Control-Expose-Headers', '*')
+    response.headers.add('Access-Control-Allow-Credentials', "true")
+    response.headers.add('Access-Control-Allow-Private-Network', "true")
+    return response
 
-CORS(app, resources={r"/a1/xploretv/v1/zeroconf": {"origins": "*",
-     "allow_headers": "*", "expose_headers": "*"}})
+
+
+# Set CORS policy
+#app.config["CORS_HEADERS"] = "Content-Type"
+
+#CORS(app, resources={r"/a1/xploretv/v1/zeroconf": {"origins": "https://tv.gustostops.com",
+#     "allow_headers": "*", "expose_headers": "*", "supports_credentials": False}})
 
 
 class ZeroConf:
@@ -562,7 +575,7 @@ class ServerThread(threading.Thread):
 
     def __init__(self, app):
         threading.Thread.__init__(self)
-        self.server = make_server(os.getenv("HOST"), os.getenv("PORT"), app)
+        self.server = make_server(os.getenv("HOST"), os.getenv("PORT"), app, ssl_context=('/etc/zeroconf-api-service/certs/fullchain.pem', '/etc/zeroconf-api-service/certs/privkey.pem'))
         self.ctx = app.app_context()
         self.ctx.push()
 

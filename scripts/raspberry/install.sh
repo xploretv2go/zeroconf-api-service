@@ -1,45 +1,49 @@
 #!/bin/bash
 
-if [[ $EUID -ne 0 ]]; then
+if [[ $EUID -ne 0 ]]
+then
    echo "This script must be run as root" 
    exit 1
 fi
 
 #Defining variable for launcher
-parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+parent_path="$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )"
 
 launcher="${parent_path}/launcher.sh"
-logFile="${parent_path}/logs/cronlog"
+service="${parent_path}/zeroconf-discovery.service"
 
 #Testing if logs folder exists
-if [ -e "${parent_path}/logs" ]
-then
-	echo "Folder logs already exists"
-else
-	echo "Creating logs folder.."
-	mkdir ${parent_path}/logs
-    cd /
-fi
+#if [ -e "${parent_path}/logs" ]
+#then
+#	echo "Folder logs already exists"
+#else
+#	echo "Creating logs folder.."
+#	mkdir ${parent_path}/logs
+#    cd /
+#fi
 
-echo "Modifying /etc/hosts file"
+echo "Setting hostname"
+raspi-config nonint do_hostname "zeroconf-discovery"
 
-
-if [[ $(sed -n '/^127.0.0.1/p' /etc/hosts) == *"zeroconf"* ]]; then
-	echo "IPv4 Host already modified"
-else
-	sed -i '/^127.0.0.1/ s/$/ zeroconf/' /etc/hosts
-	echo "IPv4 Host successfully modified"
-fi
+#echo "Modifying /etc/hosts file"
 
 
-if [[ $(sed -n '/^::1/p' /etc/hosts) == *"ip6-zeroconf"* ]]; then
-	echo "IPv6 Host already modified"
-else
-	sed -i '/^::1/ s/$/ ip6-zeroconf/' /etc/hosts
-	echo "IPv6 Host successfully modified"
-fi
+#if [[ $(sed -n '/^127.0.0.1/p' /etc/hosts) == *"zeroconf-discovery"* ]]; then
+#	echo "IPv4 Host already modified"
+#else
+#	sed -i '/^127.0.0.1/ s/$/ zeroconf/' /etc/hosts
+#	echo "IPv4 Host successfully modified"
+#fi
 
-echo "Localzeroconf alias set!"
+
+#if [[ $(sed -n '/^::1/p' /etc/hosts) == *"ip6-zeroconf-discovery"* ]]; then
+#	echo "IPv6 Host already modified"
+#else
+#	sed -i '/^::1/ s/$/ ip6-zeroconf/' /etc/hosts
+#	echo "IPv6 Host successfully modified"
+#fi
+
+echo "Zeroconf-discovery hotname set!"
 
 if [ -e $launcher ]
 then
@@ -51,30 +55,28 @@ else
 	echo "Launcher created"
 fi
 
-#Adding Zeroconf API to crontab
-add_cronjob () { 
-    echo "Adding Zeroconf API as a cronjob"
-    crontab -l > newcron
-    echo "@reboot sleep 10 && sh ${launcher} > $logFile 2>&1" >> newcron
-    crontab newcron
-    rm -f newcron
-}
+echo "Copying certificates"
 
-  
-crontab -l | grep "$launcher"
-if [ $? -eq 0 ]
-	then
-	    echo "Job already added to crontab"
-    else
-	    echo "Adding job to crontab..."
-	    add_cronjob
-fi
+mkdir -p /etc/zeroconf-api-service/certs
 
-if [ -e $logFile ]
+cp "${parent_path}/../../certs/fullchain.pem" "/etc/zeroconf-api-service/certs"
+cp "${parent_path}/../../certs/privkey.pem" "/etc/zeroconf-api-service/certs"
+
+echo "Certificates copied"
+
+if [ -e $service ]
 then
-	echo "File '$logFile' is already created"
+	echo "Service already exists"
 else
-	echo "Starting service"
-	sh ${launcher} > $logFile 2>&1 &
-	echo "Done."
+	touch "${service}"
+	printf '[Unit]\nDescription=Zeroconf service discovery\nAfter=multi-user.target\n[Service]\nRestart=always\nExecStart=%s\n[Install]\nWantedBy=multi-user.target' "${launcher}" > "${service}"
+	chmod 755 "${launcher}"
+	cp ${service} "/etc/systemd/system"
+	systemctl enable zeroconf-discovery.service
+	systemctl start zeroconf-discovery.service
+	echo "Service created"
 fi
+
+echo "Done"
+
+echo "Please reboot your device"
