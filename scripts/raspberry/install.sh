@@ -23,7 +23,7 @@ service="${parent_path}/zeroconf-discovery.service"
 #fi
 
 echo "Setting hostname"
-raspi-config nonint do_hostname "zeroconf-discovery"
+raspi-config nonint do_hostname "zerodiscovery"
 
 #echo "Modifying /etc/hosts file"
 
@@ -43,7 +43,7 @@ raspi-config nonint do_hostname "zeroconf-discovery"
 #	echo "IPv6 Host successfully modified"
 #fi
 
-echo "Zeroconf-discovery hotname set!"
+echo "Zerodiscovery hotname set!"
 
 if [ -e $launcher ]
 then
